@@ -1,49 +1,89 @@
 import {duration,stateAt} from './cube-clock.js';
-const countFormat=new Intl.NumberFormat('en-US');
-const speed=value=>Math.abs(value)>=10000?value.toExponential(2):value.toFixed(2);
 const extents=new WeakMap();
+const SMALL='#bbed91',HEAVY='#68b9cc',INK='#10201d',LINE='#2f423c',LABEL='#8fa7a0';
 
-function polygon(ctx,points,fill){ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();}
-function block(ctx,x,floor,size,color,label,velocity,labelOffset=34){
+function arrow(ctx,x0,x1,y,color){
+  const dir=Math.sign(x1-x0);
+  ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(x1,y);ctx.stroke();
+  ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x1-dir*7,y-4);ctx.lineTo(x1-dir*7,y+4);ctx.closePath();ctx.fill();
+}
+function block(ctx,x,floor,size,color,label,velocity,font){
   const y=floor-size;
   ctx.fillStyle=color;ctx.fillRect(x,y,size,size);
-  ctx.strokeStyle='#ffffff25';ctx.strokeRect(x+.5,y+.5,size-1,size-1);
-  ctx.textAlign='center';ctx.fillStyle='#10201d';ctx.font='600 18px ui-monospace, monospace';ctx.fillText(label,x+size/2,y+size/2+6);
-  ctx.fillStyle='#aec1b8';ctx.font='15px ui-monospace, monospace';ctx.fillText(`v = ${speed(velocity)}`,x+size/2,floor+labelOffset);
-  if(Math.abs(velocity)>1e-6){const start=x+size/2,end=start+Math.sign(velocity)*40,ay=y-29;ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(start,ay);ctx.lineTo(end,ay);ctx.stroke();polygon(ctx,[[end,ay],[end-Math.sign(velocity)*7,ay-4],[end-Math.sign(velocity)*7,ay+4]],color);}
+  ctx.strokeStyle='#ffffff30';ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,size-1,size-1);
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=INK;ctx.font=`600 ${font}px ${MONO}`;
+  ctx.fillText(label,x+size/2,y+size/2);
+  if(Math.abs(velocity)>1e-6){const start=x+size/2,len=Math.min(size*.9,44);arrow(ctx,start,start+Math.sign(velocity)*len,y-16,color);}
+}
+const MONO='ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+
+export function eventLabel(data,s,impact){
+  if(s.count===0)return 'Heavy block moves left';
+  if(s.count===Number(data.total))return 'Complete · blocks move apart';
+  if(impact)return s.wall?'Impact · small block / wall':'Impact · block / block';
+  return 'Frictionless motion';
 }
 
 export function drawCubes(canvas,data,time){
-  const ctx=canvas.getContext('2d'),width=1000,height=530;
-  ctx.clearRect(0,0,width,height);ctx.fillStyle='#101b1d';ctx.fillRect(0,0,width,height);
-  if(!data)return;
-  const s=stateAt(data,time),{x,y}=s;
+  const dpr=window.devicePixelRatio||1;
+  const width=Math.max(1,canvas.clientWidth||canvas.width),fullHeight=Math.max(1,canvas.clientHeight||canvas.height);
+  if(canvas.width!==Math.round(width*dpr)||canvas.height!==Math.round(fullHeight*dpr)){canvas.width=Math.round(width*dpr);canvas.height=Math.round(fullHeight*dpr);}
+  const ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,width,fullHeight);
+  if(!data)return null;
+  // Draw inside a vertically centred band so tall viewports don't leave the scene stranded.
+  const height=Math.min(fullHeight,Math.max(220,width*.55));
+  ctx.translate(0,Math.round((fullHeight-height)/2));
+
+  const s=stateAt(data,time);
   let lo=0,hi=data.frames.length;
   while(lo+1<hi){const mid=(lo+hi)>>>1;if(data.frames[mid].count<=s.count)lo=mid;else hi=mid;}
   const index=lo,impact=!s.sampled&&s.count>0&&time-s.eventTime<.06;
   if(!extents.has(data))extents.set(data,Math.max(6,stateAt(data,duration(data)).y,...data.frames.map(f=>f.y)));
-  const floor=350,wall=72,small=54,scale=(width-240)/extents.get(data);
-  ctx.textAlign='left';ctx.fillStyle='#89a39b';ctx.font='12px ui-monospace, monospace';ctx.fillText('COLLISIONS',44,44);
-  ctx.fillStyle='#e9efea';ctx.font=`500 ${s.count>=1e10?36:48}px ui-monospace, monospace`;ctx.fillText(countFormat.format(s.count),42,101);
-  ctx.fillStyle='#88a39a';ctx.font='14px ui-monospace, monospace';ctx.fillText(`of ${countFormat.format(Number(data.total))}`,45,128);
-  ctx.fillStyle='#bbed91';ctx.font='13px ui-monospace, monospace';
-  const event=s.count===0?'HEAVY BLOCK MOVES LEFT':s.count===Number(data.total)?'COMPLETE · BLOCKS MOVE APART':impact?(s.wall?'IMPACT · SMALL BLOCK / WALL':'IMPACT · BLOCK / BLOCK'):'FRICTIONLESS MOTION';
-  ctx.fillText(event,45,170);
-  ctx.strokeStyle='#32483f';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(wall,floor);ctx.lineTo(960,floor);ctx.moveTo(wall,215);ctx.lineTo(wall,floor);ctx.stroke();
-  ctx.strokeStyle=s.wall&&impact?'#bbed91':'#536d62';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(wall,215);ctx.lineTo(wall,floor);ctx.stroke();
-  ctx.lineWidth=1;ctx.strokeStyle='#354a42';for(let j=0;j<11;j++){ctx.beginPath();ctx.moveTo(wall-12,224+j*12);ctx.lineTo(wall,215+j*12);ctx.stroke();}
-  for(let j=0;j<6;j++){ctx.beginPath();ctx.moveTo(wall+j*scale,floor);ctx.lineTo(wall+j*scale+8,floor+8);ctx.stroke();}
-  block(ctx,wall+x*scale,floor,small,'#bbed91','1',s.v);
-  const label=data.digits===1?'1':data.digits<=3?String(100**(data.digits-1)):`10^${2*(data.digits-1)}`;
-  block(ctx,wall+y*scale+small,floor,data.digits===1?small:96,'#68b9cc',label,s.w,58);
 
-  const cx=820,cy=123,r=75;
-  ctx.strokeStyle='#345048';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.moveTo(cx-r-10,cy);ctx.lineTo(cx+r+10,cy);ctx.moveTo(cx,cy-r-10);ctx.lineTo(cx,cy+r+10);ctx.stroke();
-  ctx.strokeStyle='#bbed9155';ctx.beginPath();for(let j=Math.max(0,index-120);j<=index;j++){const f=data.frames[j],px=cx+f.w*r,py=cy-f.u*r;if(j===Math.max(0,index-120))ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();
-  ctx.fillStyle='#bbed91';ctx.beginPath();ctx.arc(cx+s.w*r,cy-s.u*r,5,0,Math.PI*2);ctx.fill();
-  ctx.textAlign='center';ctx.fillStyle='#8eaaa3';ctx.font='11px ui-monospace, monospace';ctx.fillText('VELOCITY SPACE',cx,22);ctx.fillText('heavy velocity →',cx,cy+r+28);
-  ctx.textAlign='left';ctx.fillStyle='#426056';ctx.fillRect(44,426,912,1);
-  ctx.fillStyle='#8eaaa3';ctx.font='12px ui-monospace, monospace';ctx.fillText('PERFECTLY ELASTIC',45,463);ctx.fillText('NO FRICTION',360,463);ctx.fillText('BEND-COMPUTED STATES',670,463);
-  ctx.fillStyle='#648078';ctx.font='12px ui-monospace, monospace';ctx.fillText(`t = ${time.toFixed(3)} s · Physical time · Block sizes are illustrative.`,45,495);
-  return s;
+  // Layout: velocity plot sits top-right when there's room; the track spans the width.
+  const narrow=width<560,compact=height<300;
+  const pad=narrow?16:32;
+  const plotR=compact||narrow?Math.max(28,Math.min(width,height)*.13):Math.max(40,Math.min(width*.09,height*.17));
+  const plotCx=width-pad-plotR-8,plotCy=pad+plotR+14;
+  const floor=Math.round(height*(compact?.76:.74));
+  const wall=pad+18;
+  const trackRight=width-pad;
+  const small=Math.round(Math.max(28,Math.min(64,width*.055)));
+  const heavy=data.digits===1?small:Math.round(small*1.75);
+  const scale=(trackRight-wall-heavy-small-12)/extents.get(data);
+
+  // Floor and wall.
+  ctx.lineCap='butt';
+  ctx.strokeStyle=LINE;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(wall,floor);ctx.lineTo(trackRight,floor);ctx.stroke();
+  const wallTop=floor-heavy-60;
+  ctx.strokeStyle=s.wall&&impact?SMALL:'#4f6a60';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(wall,wallTop);ctx.lineTo(wall,floor);ctx.stroke();
+  ctx.lineWidth=1;ctx.strokeStyle='#33473f';
+  for(let y=wallTop+10;y<floor;y+=12){ctx.beginPath();ctx.moveTo(wall-10,y+8);ctx.lineTo(wall-2,y);ctx.stroke();}
+  for(let x=wall;x<trackRight;x+=Math.max(24,scale)){ctx.beginPath();ctx.moveTo(x,floor);ctx.lineTo(x+7,floor+7);ctx.stroke();}
+
+  // Blocks.
+  const {x,y}=s,font=narrow?12:15;
+  block(ctx,wall+x*scale,floor,small,SMALL,'1',s.v,font);
+  const label=data.digits===1?'1':data.digits<=3?String(100**(data.digits-1)):`10^${2*(data.digits-1)}`;
+  block(ctx,wall+y*scale+small,floor,heavy,HEAVY,label,s.w,font);
+
+  // Velocity-space plot.
+  const cx=plotCx,cy=plotCy,r=plotR;
+  ctx.strokeStyle='#2c4038';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.moveTo(cx-r-8,cy);ctx.lineTo(cx+r+8,cy);ctx.moveTo(cx,cy-r-8);ctx.lineTo(cx,cy+r+8);ctx.stroke();
+  ctx.strokeStyle='#bbed9166';ctx.lineWidth=1.5;ctx.beginPath();
+  const from=Math.max(0,index-160);
+  for(let j=from;j<=index;j++){const f=data.frames[j],px=cx+f.w*r,py=cy-f.u*r;j===from?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+  ctx.stroke();
+  ctx.fillStyle=SMALL;ctx.beginPath();ctx.arc(cx+s.w*r,cy-s.u*r,4.5,0,Math.PI*2);ctx.fill();
+  ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.fillStyle=LABEL;ctx.font=`${narrow?9:10}px ${MONO}`;
+  ctx.fillText('VELOCITY SPACE',cx,cy-r-16);
+  if(!compact)ctx.fillText("heavy →",cx,cy+r+24);
+
+  // Time stamp.
+  ctx.textAlign='left';ctx.fillStyle='#5f7772';ctx.font=`${narrow?10:11}px ${MONO}`;
+  ctx.fillText(`t = ${time.toFixed(3)} s · block sizes are illustrative`,pad,height-pad*.6);
+
+  return {...s,impact,event:eventLabel(data,s,impact)};
 }

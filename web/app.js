@@ -42,12 +42,17 @@ function paintLife(){
   $('timeline').max=life.frames.length-1;$('timeline').value=frame;
   $('generation').textContent=`${frame} / ${life.frames.length-1}`;
 }
+const speed=v=>Math.abs(v)>=10000?v.toExponential(2):v.toFixed(2);
 function paintCubes(){
   if(!cubes)return;
   const state=drawCubes($('cube-canvas'),cubes,cursor);
+  if(!state)return;
   $('cube-timeline').max=duration(cubes);$('cube-timeline').value=cursor;
   $('cube-time').textContent=`${cursor.toFixed(2)} s`;
-  $('cube-progress').textContent=`${state.count.toLocaleString()} hits`;
+  $('cube-count').textContent=state.count.toLocaleString();
+  $('cube-of').textContent=`of ${Number(cubes.total).toLocaleString()}`;
+  $('cube-event').textContent=state.event;$('cube-event').classList.toggle('impact',state.impact);
+  $('cube-v').textContent=speed(state.v);$('cube-w').textContent=speed(state.w);
   $('cube-canvas').setAttribute('aria-label',`Collision ${state.count} of ${cubes.total}. Simulation time ${cursor.toFixed(3)} seconds.`);
 }
 function syncControls(name){
@@ -58,8 +63,8 @@ function syncControls(name){
 }
 function switchDemo(name){
   demo=name;pause();
-  document.querySelectorAll('.tab').forEach(b=>{const on=b.dataset.demo===name;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});
-  for(const [key,ids] of Object.entries({raytracer:['ray-controls','ray-footer','ray-image'],life:['life-controls','life-footer','life-canvas'],cubes:['cube-controls','cube-footer','cube-replay-note','cube-canvas']}))for(const id of ids)$(id).hidden=key!==demo;
+  document.querySelectorAll('.tab').forEach(b=>{const on=b.dataset.demo===name;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));});
+  for(const [key,ids] of Object.entries({raytracer:['ray-controls','ray-footer','ray-image'],life:['life-controls','life-footer','life-canvas'],cubes:['cube-controls','cube-footer','cube-replay-note','cube-canvas','cube-hud']}))for(const id of ids)$(id).hidden=key!==demo;
   $('stage').classList.toggle('cubes-stage',demo==='cubes');
   ['output-tag','control-title','description'].forEach((id,i)=>$(id).textContent=descriptions[demo][i]);
   $('run').innerHTML=demo==='raytracer'?'Render scene <span>↗</span>':demo==='life'?'Generate replay <span>↗</span>':'Calculate & animate <span>↗</span>';
@@ -68,7 +73,7 @@ function switchDemo(name){
   if(demo==='life'){$('life-canvas').hidden=!life;if(data)$('output-tag').textContent=`${data.size} × ${data.size} · B3 / S23`;paintLife();}
   if(demo==='raytracer'){$('ray-image').hidden=!ray;if(data)$('output-tag').textContent=`${data.width} × ${data.height} · 4 SAMPLES / PIXEL`;}
   if(demo==='cubes'){
-    $('cube-canvas').hidden=!cubes;
+    $('cube-canvas').hidden=!cubes;$('cube-hud').hidden=!cubes;
     if(data){
       $('output-tag').textContent=`${data.digits} DIGITS · PHYSICAL TIME`;
       $('cube-result').textContent=data.pi;
@@ -114,6 +119,7 @@ function tick(now){
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
+new ResizeObserver(()=>{if(demo==='cubes'&&cubes)paintCubes();}).observe($('stage'));
 $('run').addEventListener('click',async()=>{
   if(running)return;
   pause();const btn=$('run'),name=demo;running=true;btn.disabled=true;$('cancel').hidden=false;$('cancel').disabled=false;$('status').classList.remove('error');
