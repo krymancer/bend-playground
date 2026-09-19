@@ -1,0 +1,24 @@
+{
+  "name": "bend-pi-collisions",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "setup:gpu": "python3 scripts/setup-cuda.py",
+    "build": "node scripts/build-native.mjs",
+    "build:gpu": "node scripts/build-gpu.mjs",
+    "gpu": "node scripts/run-gpu.mjs",
+    "start": "npm run count",
+    "count": "bun .tools/bend/bend2/main.ts main.bend",
+    "simulate": "bun .tools/bend/bend2/main.ts simulate.bend",
+    "raytracer": "node scripts/demo.mjs raytracer",
+    "life": "node scripts/demo.mjs life",
+    "cubes": "node scripts/demo.mjs cubes",
+    "playground": "node scripts/playground.mjs",
+    "bench:demos": "node scripts/bench-demos.mjs",
+    "check": "node .tools/bend/bend2/main.ts PROOF.bend",
+    "test": "node --import ./.tools/bend/bend2/main.ts --test tests/*.test.mjs"
+  }
+}
