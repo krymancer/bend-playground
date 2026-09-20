@@ -1,5 +1,5 @@
-export type DemoName = 'raytracer' | 'life' | 'cubes' | 'rubik'
-export const DEMOS: DemoName[] = ['raytracer', 'life', 'cubes', 'rubik']
+export type DemoName = 'raytracer' | 'life' | 'cubes' | 'rubik' | 'montecarlo' | 'buffon' | 'times-table'
+export const DEMOS: DemoName[] = ['raytracer', 'life', 'cubes', 'rubik', 'montecarlo', 'buffon', 'times-table']
 
 export interface OutputMeta {
   backend: string
@@ -31,4 +31,13 @@ export interface CubesOutput extends OutputMeta {
   sampled: boolean
   frames: CubeFrame[]
   motion?: CubeFrame[]
+}
+
+export interface ProbabilityFrame { n: number; hits: number; estimate: number | null; points: number[] }
+export interface ProbabilityOutput extends OutputMeta {
+  method: 'montecarlo' | 'buffon'
+  samples: number
+  seed: number
+  previewLimit: number
+  frames: ProbabilityFrame[]
 }

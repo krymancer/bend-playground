@@ -1,9 +1,10 @@
 # Visual Bend experiments
 
-All four demos implement their computation in Bend. The official Bend examples
+All seven demos implement their computation in Bend. The official Bend examples
 and guide informed the runtime setup; no JavaScript physics or Life rules are used.
 The native demos produce pixels or recorded simulation states. The Rubik demo
 runs Bend's JavaScript output live in the browser and displays vector geometry.
+The times-table demo computes its geometry in a worker using Bend's JavaScript output.
 
 ## First run
 
@@ -225,6 +226,69 @@ the solved state. Switching tabs pauses any ongoing sequence.
 Tests check face orientations, bijective permutations, fixed centers, cubie
 integrity, inverse moves, four-turn cycles, opposite-face commutation, and
 scramble reversal.
+
+## Monte Carlo π and Buffon's needle
+
+Open `#montecarlo` or `#buffon`, or run:
+
+```sh
+npm run probability -- --gpu --method montecarlo --samples 10000000 --seed 42
+npm run probability -- --threads 8 --method buffon --samples 10000000 --seed 42
+```
+
+`probability/math.bend` generates independently indexed, seeded pseudorandom
+samples. Monte Carlo uses a square `[-1,1]²` and counts `x²+y² ≤ 1`; the estimate
+is `4 × inside / total`. Buffon uses needle length equal to the spacing between
+parallel seams; its estimate is `2 × drops / crossings`, the equal-length case
+of [Buffon's needle formula](https://mathworld.wolfram.com/BuffonsNeedleProblem.html).
+Uniform needle directions come from rejection sampling a disk and normalizing,
+so neither estimator needs a π constant. Exhausting the orientation sampler's
+retry budget fails the run explicitly rather than substituting a biased angle.
+
+`simulation.bend` forks independent counting chunks, uses short serial inner
+loops, and returns 256 cumulative count checkpoints. Every requested sample
+contributes to the exact U32 counts. Each checkpoint retains up to eight points or two needles, with actual
+sample coordinates and hit flags, so replay size is bounded independently of
+the sample count. The display explicitly labels this subset. Bend also computes
+the estimates; JavaScript draws the output and a reference π line. These are
+statistical estimates, not guaranteed decimal digits. Counts are exact integers;
+the displayed ratios use F32.
+
+Both methods share one cached native binary per backend. Changing sample count,
+method, or seed changes environment inputs, not generated source. Results are
+saved separately as `output/montecarlo.json` and `output/buffon.json`.
+
+Single local runs on the RTX 3050, 10 million samples, seed 42:
+
+| Method | CPU 8 threads compute | CUDA compute | CUDA process | JSON size |
+| --- | ---: | ---: | ---: | ---: |
+| Monte Carlo | 15 ms | 3 ms | 1,686 ms | 74 KB |
+| Buffon | 41 ms | 9 ms | 188 ms | 38 KB |
+
+Every CPU/GPU checkpoint count matched. Process time includes CUDA startup and
+output; a fast kernel does not remove startup variability. Repeated runs and
+setting changes were checked to reuse the same binary. One million samples in
+the live UI loaded in about 290 ms in a warm run, including the request and JSON.
+
+## Circle times tables
+
+Open `#times-table`. `times-table/circle.bend` maps each evenly spaced point `i`
+to `(multiplier × i) mod n` and returns the chord endpoints. Fractional
+multipliers move continuously; ×2 produces the cardioid envelope. At ×0 every
+chord ends at point 0; at ×1 every point connects to itself. The outline remains
+visible at every multiplier. This demo visualizes modular multiplication and
+does not calculate π.
+
+The 0–200 animation has play/pause, reset, single-step, scrubbing, point density,
+speed, and multiplier presets. `build-times-table.mjs` caches the 3.2 KB Bend
+JavaScript module. A browser worker computes each requested frame and transfers
+only packed coordinates to canvas. Only one frame request is in flight; newer
+settings replace pending work instead of building an animation backlog. No
+native build, server calculation, or output-file download occurs per frame.
+
+Tests cover geometric predicates, uniform directions, seed repeatability,
+parallel/serial counting agreement, replay coverage, invalid output, and
+times-table endpoints against independent modular arithmetic.
 
 ## Tests and performance
 

@@ -25,6 +25,8 @@
     "build:rubik": "node scripts/build-rubik.mjs",
     "build:ui": "npm --prefix ui run build",
     "dev:ui": "npm --prefix ui run dev",
-    "serve": "node scripts/playground.mjs"
+    "serve": "node scripts/playground.mjs",
+    "probability": "node scripts/demo.mjs probability",
+    "build:times-table": "node scripts/build-times-table.mjs"
   }
 }

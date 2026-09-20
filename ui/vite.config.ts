@@ -14,6 +14,7 @@ export default defineConfig({
       '/api': backend,
       '/output': backend,
       '/rubik-engine.js': backend,
+      '/times-table-engine.js': backend,
     },
   },
 })

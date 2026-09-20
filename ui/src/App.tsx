@@ -6,11 +6,14 @@ import { Raytracer } from '@/demos/Raytracer'
 import { Life } from '@/demos/Life'
 import { Cubes } from '@/demos/Cubes'
 import { Rubik } from '@/demos/Rubik'
+import { Probability } from '@/demos/Probability'
+import { TimesTable } from '@/demos/TimesTable'
 import { readOutput } from '@/lib/api'
-import { DEMOS, type CubesOutput, type DemoName, type LifeOutput, type RayOutput } from '@/lib/types'
+import { DEMOS, type CubesOutput, type DemoName, type LifeOutput, type RayOutput, type ProbabilityOutput } from '@/lib/types'
 
 const TABS: { id: DemoName; label: string }[] = [
   { id: 'raytracer', label: 'Ray tracer' }, { id: 'life', label: 'Game of Life' }, { id: 'cubes', label: 'π cubes' }, { id: 'rubik', label: 'Rubik graph' },
+  { id: 'montecarlo', label: 'Monte Carlo π' }, { id: 'buffon', label: 'Buffon’s needle' }, { id: 'times-table', label: 'Times table' },
 ]
 const fromHash = (): DemoName => { const h = location.hash.slice(1) as DemoName; return DEMOS.includes(h) ? h : 'raytracer' }
 
@@ -23,6 +26,9 @@ export default function App() {
   const [life, setLife] = useState<Slot<LifeOutput>>(empty)
   const [cubes, setCubes] = useState<Slot<CubesOutput>>(empty)
 
+  const [montecarlo, setMontecarlo] = useState<Slot<ProbabilityOutput>>(empty)
+  const [buffon, setBuffon] = useState<Slot<ProbabilityOutput>>(empty)
+
   useEffect(() => { const h = () => setDemo(fromHash()); addEventListener('hashchange', h); return () => removeEventListener('hashchange', h) }, [])
 
   const load = useCallback(async <T,>(name: string, set: (f: (s: Slot<T>) => Slot<T>) => void) => {
@@ -34,11 +40,21 @@ export default function App() {
   const reloadLife = useCallback(() => load<LifeOutput>('life', setLife), [load])
   const reloadCubes = useCallback(() => load<CubesOutput>('cubes', setCubes), [load])
 
+  const reloadMontecarlo = useCallback(() => load<ProbabilityOutput>('montecarlo', setMontecarlo), [load])
+  const reloadBuffon = useCallback(() => load<ProbabilityOutput>('buffon', setBuffon), [load])
+
   useEffect(() => {
     if (demo === 'raytracer' && !ray.loaded && !ray.loading) void reloadRay()
     if (demo === 'life' && !life.loaded && !life.loading) void reloadLife()
     if (demo === 'cubes' && !cubes.loaded && !cubes.loading) void reloadCubes()
-  }, [demo, ray, life, cubes, reloadRay, reloadLife, reloadCubes])
+    if (demo === 'montecarlo' && !montecarlo.loaded && !montecarlo.loading) void reloadMontecarlo()
+    if (demo === 'buffon' && !buffon.loaded && !buffon.loading) void reloadBuffon()
+  }, [demo, ray, life, cubes, montecarlo, buffon, reloadRay, reloadLife, reloadCubes, reloadMontecarlo, reloadBuffon])
+
+  useEffect(() => {
+    const reveal = () => document.querySelector('header [role=tab][data-state=active]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    reveal(); addEventListener('resize', reveal); return () => removeEventListener('resize', reveal)
+  }, [demo])
 
   const select = (id: string) => { history.replaceState(null, '', `#${id}`); setDemo(id as DemoName) }
 
@@ -63,6 +79,9 @@ export default function App() {
           {demo === 'life' && <Life {...life} reload={reloadLife} active />}
           {demo === 'cubes' && <Cubes {...cubes} reload={reloadCubes} active />}
           {demo === 'rubik' && <Rubik active />}
+          {demo === 'montecarlo' && <Probability key="montecarlo" method="montecarlo" {...montecarlo} reload={reloadMontecarlo} />}
+          {demo === 'buffon' && <Probability key="buffon" method="buffon" {...buffon} reload={reloadBuffon} />}
+          {demo === 'times-table' && <TimesTable />}
         </div>
       </JobProvider>
     </TooltipProvider>

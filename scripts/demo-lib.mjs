@@ -45,9 +45,16 @@ export function integer(value, name, allowZero=false) {
   return Number(value);
 }
 export function config(demo, opts={}) {
-  if(!['raytracer','life','cubes'].includes(demo)) throw new Error('Choose raytracer, life, or cubes.');
+  if(!['raytracer','life','cubes','probability'].includes(demo)) throw new Error('Choose raytracer, life, cubes, or probability.');
   const gpu=opts.gpu===true;
   const threads=integer(opts.threads??1,'threads');
+  if(demo==='probability') {
+    const method=opts.method??'montecarlo';
+    if(!['montecarlo','buffon'].includes(method))throw new Error('Choose montecarlo or buffon.');
+    const samples=integer(opts.samples??1000000,'samples'),seed=integer(opts.seed??42,'seed',true);
+    const inner=Math.max(0,Math.ceil(Math.log2(Math.ceil(samples/256)/128)));
+    return {demo,gpu,threads,method,samples,seed,env:{PI_SAMPLES:String(samples),PI_SEED:String(seed),PI_NEEDLE:method==='buffon'?'1':'0',TREE_DEPTH:String(inner)}};
+  }
   if(demo==='cubes') {
     const digits=integer(opts.digits??3,'digits');
     return {demo,gpu,threads,digits,env:{PI_DIGITS:String(digits)}};
@@ -131,7 +138,9 @@ export function ppm(width,height,pixels) {
 }
 export function save(c,result) {
   mkdirSync(output,{recursive:true});
-  if(c.demo==='raytracer') {
+  if(c.demo==='probability') {
+    writeOutput(`${c.method}.json`,JSON.stringify(parseProbability(c,result)));
+  } else if(c.demo==='raytracer') {
     const pixels=parseWords(result.lines[1]);
     writeOutput('raytracer.ppm',ppm(c.width,c.height,pixels));
     writeOutput('raytracer.json',JSON.stringify({...result.metadata,encoding:'ppm-p3'}));
@@ -143,5 +152,19 @@ export function save(c,result) {
     writeOutput('life.json',JSON.stringify(parseLife(c,result)));
   }
   console.log(`${c.demo}: ${result.metadata.backend}; compute ${result.metadata.kernelMs} ms, process ${result.metadata.wallMs} ms.`);
-  console.log(`Saved output/${c.demo==='raytracer'?'raytracer.ppm':`${c.demo}.json`}. View the experiments with npm run playground.`);
+  console.log(`Saved output/${c.demo==='raytracer'?'raytracer.ppm':`${c.method??c.demo}.json`}. View the experiments with npm run playground.`);
+}
+
+export function parseProbability(c,result) {
+  if(result.lines[0]!=='PROBABILITY 0')throw new Error('Needle orientation sampling exhausted its retry budget; try another seed.');
+  let previous=0,previousHits=0;
+  const frames=result.lines.slice(1).filter(Boolean).map(line=>{
+    const [n,hits,estimate,...points]=parseWords(line);
+    if(!Number.isInteger(n)||n<previous||n>c.samples||!Number.isInteger(hits)||hits<previousHits||hits>n||hits-previousHits>n-previous||(points.length%5)||points.length>40||!points.every(Number.isFinite))throw new Error('Invalid probability replay.');
+    if(n>0&&(c.method==='montecarlo'||hits>0)&&!Number.isFinite(estimate))throw new Error('Invalid pi estimate.');
+    previous=n;previousHits=hits;
+    return {n,hits,estimate:Number.isFinite(estimate)?estimate:null,points};
+  });
+  if(frames.length!==256||previous!==c.samples)throw new Error('Incomplete probability replay.');
+  return {...result.metadata,frames:frames.filter((f,i)=>f.n>0&&(i===0||f.n!==frames[i-1].n)),previewLimit:c.method==='buffon'?512:2048};
 }

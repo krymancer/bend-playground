@@ -4,7 +4,9 @@ import { spawn } from 'node:child_process';
 import { resolve, relative, extname, sep } from 'node:path';
 import { config } from './demo-lib.mjs';
 import {buildRubik} from './build-rubik.mjs';
+import {buildTimesTable} from './build-times-table.mjs';
 await buildRubik();
+await buildTimesTable();
 import { root } from './setup.mjs';
 import { gzip } from 'node:zlib';
 import { promisify } from 'node:util';
@@ -13,6 +15,9 @@ const compress=promisify(gzip),compressed=new Map();
 
 const outputs={'/output/raytracer.ppm':['output/raytracer.ppm','image/x-portable-pixmap'],'/output/raytracer.json':['output/raytracer.json','application/json'],
   '/output/life.json':['output/life.json','application/json'],'/output/cubes.json':['output/cubes.json','application/json'],'/output/benchmarks.json':['output/benchmarks.json','application/json'],
+  '/output/montecarlo.json':['output/montecarlo.json','application/json'],
+  '/output/buffon.json':['output/buffon.json','application/json'],
+  '/times-table-engine.js':['build/times-table-engine.js','text/javascript'],
   '/rubik-engine.js':['build/rubik-engine.js','text/javascript']};
 const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2','.json':'application/json'};
 // The React UI (ui/) is built by Vite into build/ui; run `npm run build:ui` or `npm run playground`.
@@ -44,7 +49,7 @@ createServer(async(req,res)=>{
       const body=JSON.parse(text),c=config(body.demo,body);
       const args=['scripts/demo.mjs',c.demo];
       if(c.gpu) args.push('--gpu'); else args.push('--threads',String(c.threads));
-      for(const k of c.demo==='raytracer'?['width','height','bounces','scene','samples','seed']:c.demo==='cubes'?['digits']:['size','steps','seed','pattern']) args.push(`--${k}`,String(c[k]));
+      for(const k of c.demo==='raytracer'?['width','height','bounces','scene','samples','seed']:c.demo==='cubes'?['digits']:c.demo==='probability'?['method','samples','seed']:['size','steps','seed','pattern']) args.push(`--${k}`,String(c[k]));
       if(job) {res.writeHead(409).end('A Bend job is already running. Cancel it before starting another.');return;}
       const child=spawn(process.execPath,args,{cwd:root,detached:true,stdio:['ignore','pipe','pipe']});
       const current={child,cancelled:false};job=current;

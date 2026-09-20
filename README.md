@@ -1,9 +1,9 @@
 # Bend playground
 
-Four experiments: a ray tracer, Conway's Game of Life, pi from colliding
-blocks, and an interactive Rubik's cube with a linked sticker graph.
-The first three run Bend 2 on native CPU or NVIDIA CUDA. Rubik's cube runs
-Bend compiled to JavaScript directly in the browser.
+Seven experiments: ray tracing, Conway's Game of Life, π from colliding blocks,
+Rubik's cube, Monte Carlo π, Buffon's needle, and circle times tables.
+The numerical simulations run Bend 2 on native CPU or NVIDIA CUDA. Rubik's cube
+and the animated times table run Bend compiled to JavaScript in the browser.
 
 ## Visual playground
 
@@ -32,6 +32,24 @@ drag-to-orbit controls. Bend computes the sticker permutations; SVG draws the
 cube and linked graph. Turns run locally without server requests or recompiling.
 “Undo all” reverses the recorded moves; it is not a solver for arbitrary cubes.
 The server builds the browser module once and reuses it until its source changes.
+
+**Monte Carlo π** (`#montecarlo`) samples points in a square and uses
+`π ≈ 4 × inside / total`. **Buffon's needle** (`#buffon`) drops unit toothpicks
+across unit-width planks and uses `π ≈ 2 × drops / crossings`. Both have seeded
+CPU/GPU sampling, exact integer counts, convergence charts, and animated replays.
+Every sample is counted; at most 2,048 actual samples are drawn to keep large
+runs quick to load. Neither estimator uses a π constant in its sampling code.
+
+**Times table** (`#times-table`) animates `i → (multiplier × i) mod points`
+from 0 to 200, including the cardioid at ×2. Play, pause, scrub, change speed,
+or jump to a multiplier. Bend computes chord endpoints in a browser worker;
+animation makes no server requests and does not recompile. This is a modular
+multiplication visualization, not another estimator of π.
+
+```sh
+npm run probability -- --gpu --method montecarlo --samples 10000000 --seed 42
+npm run probability -- --gpu --method buffon --samples 10000000 --seed 42
+```
 
 The **π cubes** tab animates Bend-computed collision positions and velocities,
 with play/pause, step, reset, a timeline, and a velocity-space plot. Small runs
