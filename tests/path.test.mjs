@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import P from '../demos/raytracer/path.bend';
+import Fast from '../demos/raytracer/grid-path.bend';
 import V from '../demos/raytracer/ray.bend';
 import {config} from '../scripts/demo-lib.mjs';
 const vec=(x,y,z)=>({$:'Vec',x,y,z});
@@ -81,4 +82,44 @@ test('scene settings reach Bend and invalid settings are rejected',()=>{
   assert.equal(config('raytracer').samples,4);
   assert.throws(()=>config('raytracer',{scene:'unknown'}));
   assert.throws(()=>config('raytracer',{scene:'weekend',samples:0}));
+});
+
+// Production grid lookup is checked against the independently traversed tree.
+test('grid cell numbering preserves scene seeds and packed hit distances',()=>{
+  for(let i=0;i<32;i++)assert.equal(Fast.compact(Fast.spread(i)),i);
+  for(const d of [0.001,0.2,1,12345,1e20]){
+    const packed=P.candidate(Math.fround(d),2047n);
+    assert.ok(packed<2n**48n);assert.equal(packed%4096n,2047n);
+    assert.equal(P.candidate_distance(packed),Math.fround(d));
+  }
+});
+
+test('grid search matches reference hits for random rays across four seeded scenes',()=>{
+  for(const seed of [0,7,42,0xffffffff]){
+    const tree=P.world(2,seed);
+    for(let i=0;i<1500;i++){
+      const origin=vec(P.random(i+200)*26-13,P.random(i+300)*4,P.random(i+500)*26-13);
+      const direction=V.unit(vec(P.random(i)*2-1,P.random(i+400)*2-1,P.random(i+100)*2-1));
+      const expected=P.scene_hit(tree,origin,direction),actual=Fast.scene_hit(true,seed,origin,direction);
+      assert.equal(actual.distance,expected.distance);
+      if(expected.distance<1e5)assert.deepEqual(actual,expected);
+    }
+  }
+});
+
+test('grid search handles axis-parallel rays, grid edges, and origins inside the sphere layer',()=>{
+  const directions=[vec(1,0,0),vec(-1,0,0),vec(0,1,0),vec(0,-1,0),vec(0,0,1),vec(0,0,-1),V.unit(vec(1e-9,-1,0)),V.unit(vec(1,-.01,1))];
+  for(const x of [-11.2,-11,-10.8,0,10.8,11.2])for(const y of [0,.2,.4,2])for(const z of [-10.1,0,10.8])for(const direction of directions){
+    const origin=vec(x,y,z),expected=P.scene_hit(world,origin,direction),actual=Fast.scene_hit(true,42,origin,direction);
+    assert.equal(actual.distance,expected.distance);
+    if(expected.distance<1e5)assert.deepEqual(actual,expected);
+  }
+});
+
+test('fast rendering retains reference scene colors, sampling, and padded output',()=>{
+  for(const scene of [1,2]){
+    const tree=P.world(scene,42),width=12,height=8;
+    for(let y=0;y<height;y++)for(let x=0;x<width;x++)assert.equal(Fast.pixel(x,y,width,height,12n,scene===2,42,8,42),P.pixel(x,y,width,height,12n,tree,8,42));
+    assert.deepEqual(Fast.render_pixel(false,100,width,height,12n,scene===2,42,8,42),{$:'Leaf',word:0});
+  }
 });

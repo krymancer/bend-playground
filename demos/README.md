@@ -83,7 +83,8 @@ npm run raytracer -- --threads 8 --scene weekend --samples 32 --seed 42
 ```
 
 The scene selector keeps the original renderer and adds two Monte Carlo path
-tracing scenes implemented in `raytracer/path.bend`:
+tracing scenes implemented in `raytracer/grid-path.bend`, with shared material
+and sampling helpers in `raytracer/path.bend`:
 
 - `materials`: three large spheres demonstrating Lambertian matte, polished
   metal, and glass on a neutral ground sphere.
@@ -97,22 +98,38 @@ tracing scenes implemented in `raytracer/path.bend`:
 Bend computes random camera rays, cosine-weighted diffuse scattering, rough
 metal reflection, Snell refraction, Schlick reflectance, total internal
 reflection, sky illumination, and gamma encoding after averaging samples.
-The camera uses a thin lens for depth of field. A spatial binary hierarchy
-rejects groups of small spheres using axis-aligned bounds. CPU and CUDA use
-the same Bend source; pixel subtrees are independent parallel tasks.
+The camera uses a thin lens for depth of field. Rays traverse a uniform grid
+through the layer of small spheres, checking neighboring cells because spheres
+can overlap cell edges. Cell coordinates and the seed reconstruct the same
+geometry without carrying a shared scene tree through every ray. Candidate
+distance and object index fit in one immediate Nat; only the nearest hit needs
+a full material/normal record. CPU and CUDA use the same Bend source; pixel
+subtrees are independent parallel tasks. The original binary hierarchy remains
+as a reference implementation for intersection tests.
 
 New scenes default to 16 samples per pixel, 12 bounces, and seed 42. More
 samples reduce noise; more bounces extend possible light paths. Zero bounces
 returns black in the path tracer. Changing settings reuses the compiled binary.
 All scenes produce the same P3 RGB format, and the browser only displays it.
 
-A local CUDA preview at 256 × 160, 4 samples, and 8 bounces took 685 ms end to
-end. At 512 × 320, 32 samples, and 12 bounces it took 16.4 s. These are single
-measurements, not a promise of real-time rendering. Use small previews while
-experimenting; the 500-sample book settings involve much more work.
+Replacing shared-tree traversal with grid lookup, packing candidate hits, and
+accumulating attenuation in a tail-recursive loop reduced this local RTX 3050
+CUDA render without changing settings: `weekend`, 1024 × 640, 32 samples,
+64 maximum bounces, seed 42.
 
-Tests compare hierarchy intersections with exhaustive sphere searches, check
-material scattering and glass refraction, verify seeds, and round-trip Bend
+| Timing | Before | After |
+| --- | ---: | ---: |
+| Compute | 62,667 ms | 7,295 ms |
+| Whole process | 63,757 ms | 8,197 ms |
+
+All 655,360 RGB pixels matched exactly. These are individual measurements;
+compilation is excluded from both timings. The workload still traces 20,971,520
+primary rays and their scattered paths. More samples require more work, and
+maximum bounces is an upper bound, not a forced path length.
+
+Tests compare hierarchy intersections with exhaustive sphere searches, compare
+grid lookup with the reference hierarchy across seeded scenes and boundary rays,
+check material scattering and glass refraction, verify seeds, and round-trip Bend
 colors through PPM into canvas RGBA without altering channel values.
 
 ## Conway's Game of Life

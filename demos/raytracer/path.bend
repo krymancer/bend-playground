@@ -124,14 +124,17 @@ def hit_tree(tree: Tree, valid: Bool, +origin: V.Vec, +direction: V.Vec, +best: 
           +first = hit_tree(left,bounds(left,origin,direction,distance(best)),origin,direction,best)
           hit_tree(right,bounds(right,origin,direction,distance(first)),origin,direction,first)
 
-def material_ball(kind: U32, center: V.Vec, +seed: U32) -> Tree:
+def material_ball_tag(kind: Nat, center: V.Vec, +seed: U32) -> Tree:
   match kind:
-    case 0:
+    case 0n:
       Ball{center,0.2,0,multiply(random_vec((seed + 3 : U32)),random_vec((seed + 6 : U32))),0.0}
-    case 1:
+    case 1n:
       Ball{center,0.2,1,V.add(V.Vec{0.5,0.5,0.5},V.scale(random_vec((seed + 3 : U32)),0.5)),(0.5 * random((seed + 6 : U32)) : F32)}
     case _:
       Ball{center,0.2,2,V.Vec{1.0,1.0,1.0},0.0}
+
+def material_ball(kind: U32, center: V.Vec, +seed: U32) -> Tree:
+  material_ball_tag(U32.to_nat(kind), center, seed)
 
 def little_ball(valid: Bool, center: V.Vec, +seed: U32) -> Tree:
   match valid:
@@ -157,24 +160,27 @@ def field(depth: Nat, axis: Bool, +x: F32, +z: F32, +sx: F32, +sz: F32, +seed: U
     case 1n+ +p:
       match axis:
         case True{}:
-        +low = vec((x - 0.2 : F32),0.0,(z - 0.2 : F32))
-        +high = vec((x + sx + 0.2 : F32),0.4,(z + sz + 0.2 : F32))
+          +low = vec((x - 0.2 : F32),0.0,(z - 0.2 : F32))
+          +high = vec((x + sx + 0.2 : F32),0.4,(z + sz + 0.2 : F32))
           a = field(p,False{},x,z,(sx * 0.5 : F32),sz,(seed * 2 + 1 : U32))
           b = field(p,False{},(x + sx * 0.5 : F32),z,(sx * 0.5 : F32),sz,(seed * 2 + 2 : U32))
           Branch{low,high,a,b}
         case False{}:
-        +low = vec((x - 0.2 : F32),0.0,(z - 0.2 : F32))
-        +high = vec((x + sx + 0.2 : F32),0.4,(z + sz + 0.2 : F32))
+          +low = vec((x - 0.2 : F32),0.0,(z - 0.2 : F32))
+          +high = vec((x + sx + 0.2 : F32),0.4,(z + sz + 0.2 : F32))
           a = field(p,True{},x,z,sx,(sz * 0.5 : F32),(seed * 2 + 1 : U32))
           b = field(p,True{},x,(z + sz * 0.5 : F32),sx,(sz * 0.5 : F32),(seed * 2 + 2 : U32))
           Branch{low,high,a,b}
 
-def world(scene: U32, seed: U32) -> Tree:
+def world_tag(scene: Nat, seed: U32) -> Tree:
   match scene:
-    case 2:
+    case 2n:
       field(10n,True{},(0.0 - 16.0 : F32),(0.0 - 16.0 : F32),32.0,32.0,seed)
     case _:
       Empty{}
+
+def world(scene: U32, seed: U32) -> Tree:
+  world_tag(U32.to_nat(scene), seed)
 
 def scene_hit(tree: Tree, +origin: V.Vec, +direction: V.Vec) -> Hit:
   floor = ball_hit(V.Vec{0.0,(0.0 - 1000.0 : F32),0.0},1000.0,0,V.Vec{0.5,0.5,0.5},0.0,origin,direction)
@@ -182,6 +188,21 @@ def scene_hit(tree: Tree, +origin: V.Vec, +direction: V.Vec) -> Hit:
   b = ball_hit(V.Vec{(0.0 - 4.0 : F32),1.0,0.0},1.0,0,V.Vec{0.4,0.2,0.1},0.0,origin,direction)
   c = ball_hit(V.Vec{4.0,1.0,0.0},1.0,1,V.Vec{0.7,0.6,0.5},0.0,origin,direction)
   hit_tree(tree,True{},origin,direction,nearer(nearer(floor,a),nearer(b,c)))
+
+# Positive F32 distance bits plus a 12-bit object index fit in one immediate
+# Nat. The grid traversal uses this instead of allocating candidate hit records.
+def candidate(d: F32, index: Nat) -> Nat:
+  (U32.to_nat(F32.bits(d)) * 4096n + index)
+
+def bits_float(x: U32) -> F32:
+  U32{bits} = x
+  F32{bits}
+
+def candidate_distance(key: Nat) -> F32:
+  bits_float(U32.from_nat((key / 4096n)))
+
+def closest(+a: Nat, +b: Nat) -> Nat:
+  Bool.pick(Nat,(candidate_distance(a) < candidate_distance(b) : F32),a,b)
 
 def sky(direction: V.Vec) -> V.Vec:
   +t = (0.5 * (V.vy(direction) + 1.0) : F32)
@@ -208,12 +229,12 @@ def metal(valid: Bool, direction: V.Vec, color: V.Vec) -> Scatter:
     case False{}:
       Absorb{}
 
-def scatter(kind: U32, +direction: V.Vec, +normal: V.Vec, color: V.Vec, fuzz: F32, front: Bool, seed: U32) -> Scatter:
+def scatter_tag(kind: Nat, +direction: V.Vec, +normal: V.Vec, color: V.Vec, fuzz: F32, front: Bool, seed: U32) -> Scatter:
   match kind:
-    case 0:
+    case 0n:
       +out = V.add(normal,random_unit(seed))
       Bounce{V.unit(Bool.pick(V.Vec,(V.dot(out,out) < 0.00000001 : F32),normal,out)),color}
-    case 1:
+    case 1n:
       +out = V.unit(V.add(V.reflect(direction,normal),V.scale(random_unit(seed),fuzz)))
       metal((V.dot(out,normal) > 0.0 : F32),out,color)
     case _:
@@ -223,6 +244,9 @@ type Path is Data:
   Escaped{color: V.Vec}
   Stopped{}
   Segment{point: V.Vec, direction: V.Vec, attenuation: V.Vec}
+
+def scatter(kind: U32, +direction: V.Vec, +normal: V.Vec, color: V.Vec, fuzz: F32, front: Bool, seed: U32) -> Scatter:
+  scatter_tag(U32.to_nat(kind), direction, normal, color, fuzz, front, seed)
 
 def segment(s: Scatter, point: V.Vec) -> Path:
   match s:
@@ -244,19 +268,22 @@ def next_path(tree: Tree, +origin: V.Vec, +direction: V.Vec, seed: U32) -> Path:
   path_hit((distance(h) > 100000.0 : F32),h,origin,direction,seed)
 
 # One sampled path per ray. Never evaluate a second recursive branch eagerly.
-def walk(depth: Nat, path: Path, +tree: Tree, +seed: U32) -> V.Vec:
+def walk_acc(depth: Nat, path: Path, +tree: Tree, +seed: U32, weight: V.Vec) -> V.Vec:
   match depth:
     case 0n:
       V.Vec{0.0,0.0,0.0}
     case 1n+p:
       match path:
         case Escaped{color}:
-          color
+          multiply(weight,color)
         case Stopped{}:
           V.Vec{0.0,0.0,0.0}
         case Segment{point,direction,attenuation}:
           +next_seed = hash((seed + 17 : U32))
-          multiply(attenuation,walk(p,next_path(tree,point,direction,next_seed),tree,next_seed))
+          walk_acc(p,next_path(tree,point,direction,next_seed),tree,next_seed,multiply(weight,attenuation))
+
+def walk(depth: Nat, path: Path, tree: Tree, seed: U32) -> V.Vec:
+  walk_acc(depth,path,tree,seed,V.Vec{1.0,1.0,1.0})
 
 def trace(depth: Nat, +tree: Tree, origin: V.Vec, direction: V.Vec, +seed: U32) -> V.Vec:
   walk(depth,next_path(tree,origin,direction,seed),tree,seed)

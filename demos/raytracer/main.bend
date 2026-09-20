@@ -1,6 +1,6 @@
 import Base
 import ./ray.bend as Ray
-import ./path.bend as Path
+import ./grid-path.bend as Path
 import ../shared/grid.bend as G
 import ../shared/config.bend as Config
 
@@ -9,9 +9,9 @@ def render(scene: U32, depth: Nat, width: U32, height: U32, bounces: Nat, sample
     case 0:
       Ray.render(depth, 0, width, height, bounces)
     case 1:
-      Path.render(depth, 0, width, height, bounces, Path.world(1, seed), samples, seed)
+      Path.render(depth, 0, width, height, bounces, False{}, seed, samples, seed)
     case _:
-      Path.render(depth, 0, width, height, bounces, Path.world(2, seed), samples, seed)
+      Path.render(depth, 0, width, height, bounces, True{}, seed, samples, seed)
 
 def main() -> IO(Unit):
   do IO<Unit>:
