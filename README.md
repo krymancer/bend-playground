@@ -17,7 +17,12 @@ npm run playground
 Open **http://localhost:3000** to view the rendered scene, Life replay, and π
 cubes. You can change settings, choose CPU or GPU, and run each experiment from the viewer.
 Life has play, pause, single-step, generation scrubbing, and speed controls.
-The ray tracer saves an ordinary PNG you can download.
+The ray tracer saves plain-text RGB colors as `output/raytracer.ppm`, using the
+P3 format from [Ray Tracing in One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html#outputanimage/theppmimageformat).
+The browser reads those numbers into a canvas; Save PPM downloads the same file.
+Choose **Original**, **Material study**, or **Weekend · field of spheres**.
+The new scenes use Bend path tracing with diffuse, metal, and glass materials,
+depth of field, configurable samples per pixel, and a repeatable random seed.
 
 The **Rubik graph** tab (`#rubik`) has live face turns, scramble, undo, and
 drag-to-orbit controls. Bend computes the sticker permutations; SVG draws the

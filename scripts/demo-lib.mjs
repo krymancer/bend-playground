@@ -1,7 +1,6 @@
 import { existsSync, mkdirSync, mkdtempSync, rmSync, statSync, readdirSync, writeFileSync, renameSync } from 'node:fs';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { resolve, join } from 'node:path';
-import { deflateSync } from 'node:zlib';
 import { setup, root } from './setup.mjs';
 
 export const output = resolve(root, 'output');
@@ -54,9 +53,12 @@ export function config(demo, opts={}) {
     return {demo,gpu,threads,digits,env:{PI_DIGITS:String(digits)}};
   }
   if(demo==='raytracer') {
-    const width=integer(opts.width??512,'width'),height=integer(opts.height??320,'height'), bounces=integer(opts.bounces??3,'bounces',true);
+    const scene=opts.scene??'mirrors',kind={mirrors:0,materials:1,weekend:2}[scene];
+    if(!Number.isInteger(kind))throw new Error('Ray scene must be mirrors, materials, or weekend.');
+    const width=integer(opts.width??512,'width'),height=integer(opts.height??320,'height'), bounces=integer(opts.bounces??(kind?12:3),'bounces',true);
+    const samples=kind?integer(opts.samples??16,'samples'):4,seed=integer(opts.seed??42,'seed',true);
     if(width*height>0x40000000) throw new Error('The pixel tree would overflow its U32 indices.');
-    return {demo,gpu,threads,width,height,bounces,env:{RAY_WIDTH:String(width),RAY_HEIGHT:String(height),RAY_BOUNCES:String(bounces),TREE_DEPTH:String(Math.ceil(Math.log2(width*height)))}};
+    return {demo,gpu,threads,width,height,bounces,scene,samples,seed,env:{RAY_WIDTH:String(width),RAY_HEIGHT:String(height),RAY_BOUNCES:String(bounces),RAY_SCENE:String(kind),RAY_SAMPLES:String(samples),RAY_SEED:String(seed),TREE_DEPTH:String(Math.ceil(Math.log2(width*height)))}};
   }
   const size=integer(opts.size??128,'size'), steps=integer(opts.steps??120,'steps',true),seed=integer(opts.seed??42,'seed',true);
   if(size<32 || (size & (size-1)) || size*size/32>0x40000000) throw new Error('Life size must be a power of two, at least 32, with word indices that fit U32.');
@@ -115,32 +117,24 @@ export function parseCubes(result) {
   if(motion.length&&(motion[0].count!==0||motion[0].time!==0||motion.at(-1).count!==Number(total)||motion.some((f,i)=>!Number.isSafeInteger(f.count)||f.x < -0.0001||f.y<f.x-0.0001||(i>0&&(f.time<=motion[i-1].time||f.count<motion[i-1].count)))))throw new Error('Invalid physical-time replay.');
   return {...result.metadata,total,pi:total.length===1?total:`${total[0]}.${total.slice(1)}`,sampled:frames.length!==Number(total)+1,frames,motion};
 }
-function crc32(bytes) {
-  let crc=0xffffffff;
-  for(const b of bytes) { crc ^= b; for(let bit=0;bit<8;bit++) crc=(crc>>>1)^((crc&1)?0xedb88320:0); }
-  return (crc^0xffffffff)>>>0;
-}
-function chunk(type,data) {
-  const name=Buffer.from(type),length=Buffer.alloc(4),crc=Buffer.alloc(4);
-  length.writeUInt32BE(data.length); crc.writeUInt32BE(crc32(Buffer.concat([name,data])));
-  return Buffer.concat([length,name,data,crc]);
-}
-export function png(width,height,pixels) {
-  const header=Buffer.alloc(13); header.writeUInt32BE(width,0); header.writeUInt32BE(height,4); header[8]=8; header[9]=2;
-  const raw=Buffer.alloc(height*(width*3+1));
-  for(let y=0;y<height;y++) for(let x=0;x<width;x++) {
-    const p=pixels[y*width+x],at=y*(width*3+1)+1+x*3;
-    raw[at]=(p>>>16)&255; raw[at+1]=(p>>>8)&255; raw[at+2]=p&255;
+export function ppm(width,height,pixels) {
+  const count=width*height;
+  if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||!Number.isSafeInteger(count)||pixels.length<count)throw new Error('Incomplete ray-tracer output.');
+  const lines=[`P3\n${width} ${height}\n255`];
+  // The balanced Bend tree can contain padded leaves after the final pixel.
+  for(let i=0;i<count;i++){
+    const p=pixels[i];
+    if(!Number.isInteger(p)||p<0||p>0xffffff)throw new Error('Invalid Bend RGB pixel.');
+    lines.push(`${(p>>>16)&255} ${(p>>>8)&255} ${p&255}`);
   }
-  return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',header),chunk('IDAT',deflateSync(raw)),chunk('IEND',Buffer.alloc(0))]);
+  return lines.join('\n')+'\n';
 }
 export function save(c,result) {
   mkdirSync(output,{recursive:true});
   if(c.demo==='raytracer') {
     const pixels=parseWords(result.lines[1]);
-    if(pixels.length< c.width*c.height) throw new Error('Incomplete ray-tracer output.');
-    writeOutput('raytracer.png',png(c.width,c.height,pixels));
-    writeOutput('raytracer.json',JSON.stringify(result.metadata));
+    writeOutput('raytracer.ppm',ppm(c.width,c.height,pixels));
+    writeOutput('raytracer.json',JSON.stringify({...result.metadata,encoding:'ppm-p3'}));
   } else if(c.demo==='cubes') {
     const replay=parseCubes(result);
     writeOutput('cubes.json',JSON.stringify(replay));
@@ -149,5 +143,5 @@ export function save(c,result) {
     writeOutput('life.json',JSON.stringify(parseLife(c,result)));
   }
   console.log(`${c.demo}: ${result.metadata.backend}; compute ${result.metadata.kernelMs} ms, process ${result.metadata.wallMs} ms.`);
-  console.log(`Saved output/${c.demo==='raytracer'?'raytracer.png':`${c.demo}.json`}. View the experiments with npm run playground.`);
+  console.log(`Saved output/${c.demo==='raytracer'?'raytracer.ppm':`${c.demo}.json`}. View the experiments with npm run playground.`);
 }

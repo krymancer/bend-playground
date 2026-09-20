@@ -38,7 +38,7 @@
       </div>
 
       <div class="stage" id="stage">
-        <img id="ray-image" alt="Bend ray-traced scene with reflective colored spheres on a checkered floor">
+        <canvas id="ray-canvas" aria-label="Ray-traced scene drawn from Bend-computed RGB pixels"></canvas>
         <canvas id="life-canvas" hidden aria-label="Game of Life generation"></canvas>
         <canvas id="cube-canvas" hidden aria-label="Two colliding blocks, a wall, and their velocity-space trajectory"></canvas>
         <div id="rubik-view" class="rubik-view" hidden><svg id="rubik-cube" viewBox="0 0 500 500" role="img" aria-label="Interactive 3D Rubik’s cube; drag to rotate the view"></svg><svg id="rubik-graph" viewBox="0 0 500 500" role="group" aria-label="Cube sticker positions and face-turn connections"></svg></div>
@@ -46,8 +46,8 @@
       </div>
 
       <div id="ray-footer" class="preview-footer">
-        <span class="footer-note">Analytic intersections · hard shadows · recursive reflections</span>
-        <a class="link" href="/output/raytracer.png" download="bend-raytracer.png">Save PNG ↗</a>
+        <span id="ray-note" class="footer-note">Analytic intersections · hard shadows · recursive reflections</span>
+        <a class="link" href="/output/raytracer.ppm" download="bend-raytracer.ppm">Save PPM ↗</a>
       </div>
 
       <div id="life-footer" class="preview-footer transport" hidden>
@@ -86,8 +86,10 @@
       <label id="backend-label">Compute device<select id="backend"><option value="gpu">NVIDIA GPU · CUDA</option><option value="cpu1">CPU · 1 thread</option><option value="cpu8">CPU · 8 threads</option></select></label>
 
       <div id="ray-controls">
+        <label>Scene<select id="ray-scene"><option value="mirrors">Original · mirrors & checkerboard</option><option value="materials">Material study · matte, metal & glass</option><option value="weekend">Weekend · field of spheres</option></select></label>
         <label>Resolution<select id="resolution"><option value="256,160">256 × 160 · quick</option><option value="512,320" selected>512 × 320</option><option value="1024,640">1024 × 640</option></select></label>
-        <label>Maximum reflection depth<input id="bounces" type="number" min="0" value="3"></label>
+        <label>Maximum bounces<input id="bounces" type="number" min="0" step="1" value="3"></label>
+        <div id="path-controls" hidden><div class="pair"><label>Samples / pixel<input id="ray-samples" type="number" min="1" step="1" value="16"></label><label>Random seed<input id="ray-seed" type="number" min="0" step="1" value="42"></label></div><p class="hint">More samples reduce grain; more bounces allow longer light paths. Start small, then increase quality.</p></div>
       </div>
 
       <div id="life-controls" hidden>

@@ -20,7 +20,7 @@ npm run playground
 ```
 
 Visit http://localhost:3000. The viewer can submit new Bend jobs, download the
-rendered PNG, and play/pause/step/scrub Life's recorded generations. One compute
+RGB output as PPM, and play/pause/step/scrub Life's recorded generations. One compute
 job runs at a time. Changing the compute device or settings applies on the next
 Render/Generate action. `PORT=3001 npm run playground` changes the server port.
 The viewer loads each demo only when opened and refreshes only the result of
@@ -43,7 +43,8 @@ npm run raytracer -- --gpu --width 1024 --height 640 --bounces 4
 npm run raytracer -- --threads 8 --width 512 --height 320
 ```
 
-Defaults: 512 × 320, three reflection levels, four samples per pixel.
+The original `mirrors` scene defaults to 512 × 320, three reflection levels,
+and four samples per pixel.
 `--bounces 0` shows the sky only. The scene contains four colored/reflective
 spheres and a checkerboard floor, with analytic sphere/plane intersections,
 directional lighting, hard shadows, recursive reflections and gamma encoding.
@@ -52,8 +53,67 @@ raising it does not force escaped rays through unnecessary reflection work.
 
 `raytracer/ray.bend` builds a balanced binary tree of pixel tasks. Padded leaves
 outside the image return black. The native program returns packed RGB values;
-the Node launcher merely encodes them as `output/raytracer.png` using zlib.
-No image-generation service or graphics library is involved.
+the Node launcher unpacks those colors into `output/raytracer.ppm`, using the
+plain-text P3 format from
+[Ray Tracing in One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html#outputanimage/theppmimageformat):
+
+```text
+P3
+width height
+255
+red green blue
+...
+```
+
+Each channel is an integer from 0 to 255. Pixels are ordered left to right,
+then top to bottom; padded leaves are omitted. Bend already applies gamma
+encoding. The browser parses the RGB triplets, adds an opaque alpha channel,
+and draws them using `ImageData` and `putImageData`. It does no ray tracing or
+additional gamma correction. The server gzip-compresses PPM transfers, but the
+saved/downloaded file remains plain text. No PNG encoder is used.
+
+`output/raytracer.json` stores settings and timings only.
+
+### Book-inspired scenes
+
+```sh
+npm run raytracer -- --gpu --scene materials --samples 16 --bounces 12
+npm run raytracer -- --gpu --scene weekend --width 256 --height 160 --samples 4
+npm run raytracer -- --threads 8 --scene weekend --samples 32 --seed 42
+```
+
+The scene selector keeps the original renderer and adds two Monte Carlo path
+tracing scenes implemented in `raytracer/path.bend`:
+
+- `materials`: three large spheres demonstrating Lambertian matte, polished
+  metal, and glass on a neutral ground sphere.
+- `weekend`: a seeded field inspired by the book's
+  [final render](https://raytracing.github.io/books/RayTracingInOneWeekend.html#wherenext?/afinalrender),
+  with hundreds of small matte, rough-metal, and glass spheres plus the three
+  large spheres. Seed 42 produces 471 small spheres; clearances keep them out
+  of the large spheres. This is a new deterministic arrangement, not an exact
+  reproduction of the book's random image.
+
+Bend computes random camera rays, cosine-weighted diffuse scattering, rough
+metal reflection, Snell refraction, Schlick reflectance, total internal
+reflection, sky illumination, and gamma encoding after averaging samples.
+The camera uses a thin lens for depth of field. A spatial binary hierarchy
+rejects groups of small spheres using axis-aligned bounds. CPU and CUDA use
+the same Bend source; pixel subtrees are independent parallel tasks.
+
+New scenes default to 16 samples per pixel, 12 bounces, and seed 42. More
+samples reduce noise; more bounces extend possible light paths. Zero bounces
+returns black in the path tracer. Changing settings reuses the compiled binary.
+All scenes produce the same P3 RGB format, and the browser only displays it.
+
+A local CUDA preview at 256 × 160, 4 samples, and 8 bounces took 685 ms end to
+end. At 512 × 320, 32 samples, and 12 bounces it took 16.4 s. These are single
+measurements, not a promise of real-time rendering. Use small previews while
+experimenting; the 500-sample book settings involve much more work.
+
+Tests compare hierarchy intersections with exhaustive sphere searches, check
+material scattering and glass refraction, verify seeds, and round-trip Bend
+colors through PPM into canvas RGBA without altering channel values.
 
 ## Conway's Game of Life
 
@@ -159,8 +219,11 @@ npm run bench:demos -- --demo life --size 256 --steps 240
 ```
 
 The benchmark checks result agreement between one CPU thread, up to eight CPU
-threads, and CUDA. Life must match exactly; ray colors may differ by at most
-2/255 between CPU and GPU floating-point libraries. In the default runs here,
+threads, and CUDA. Life must match exactly; original mirror-scene colors may
+differ by at most 2/255 between CPU and GPU floating-point libraries. For the
+stochastic scenes, the check uses RGB RMS error of at most 2/255 and reports
+the largest channel difference, since grazing intersections can change an
+individual path. In the original default runs here,
 both outputs matched exactly. Benchmarks save `output/benchmarks.json`.
 
 Initial single-run measurements on this machine's RTX 3050:
@@ -185,7 +248,7 @@ whole-process GPU measurements used the same settings and data as before:
 
 | Workload | Before | After | Result comparison |
 | --- | ---: | ---: | --- |
-| Ray tracer, 1024 × 640, depth 128 | 18,324 ms | 1,422 ms | Identical PNG bytes |
+| Ray tracer, 1024 × 640, depth 128 | 18,324 ms | 1,422 ms | Identical PNG bytes (before the PPM change) |
 | Life glider, 512 × 512, 1,000 generations | 62,074 ms | 1,752 ms | All 1,001 grids identical |
 
 The glider replay shrank from 16.4 MB to 37 KB without dropping generations.

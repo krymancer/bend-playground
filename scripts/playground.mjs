@@ -14,7 +14,8 @@ const compress=promisify(gzip),compressed=new Map();
 const files={'/':['web/index.html','text/html'],'/app.js':['web/app.js','text/javascript'],'/cubes.js':['web/cubes.js','text/javascript'],'/style.css':['web/style.css','text/css'],
   '/rubik.js':['web/rubik.js','text/javascript'],'/rubik-engine.js':['build/rubik-engine.js','text/javascript'],
   '/cube-clock.js':['web/cube-clock.js','text/javascript'],
-  '/output/raytracer.png':['output/raytracer.png','image/png'],'/output/raytracer.json':['output/raytracer.json','application/json'],
+  '/ppm.js':['web/ppm.js','text/javascript'],
+  '/output/raytracer.ppm':['output/raytracer.ppm','image/x-portable-pixmap'],'/output/raytracer.json':['output/raytracer.json','application/json'],
   '/output/life.json':['output/life.json','application/json'],'/output/cubes.json':['output/cubes.json','application/json'],'/output/benchmarks.json':['output/benchmarks.json','application/json']};
 let job=null;
 createServer(async(req,res)=>{
@@ -36,7 +37,7 @@ createServer(async(req,res)=>{
       const body=JSON.parse(text),c=config(body.demo,body);
       const args=['scripts/demo.mjs',c.demo];
       if(c.gpu) args.push('--gpu'); else args.push('--threads',String(c.threads));
-      for(const k of c.demo==='raytracer'?['width','height','bounces']:c.demo==='cubes'?['digits']:['size','steps','seed','pattern']) args.push(`--${k}`,String(c[k]));
+      for(const k of c.demo==='raytracer'?['width','height','bounces','scene','samples','seed']:c.demo==='cubes'?['digits']:['size','steps','seed','pattern']) args.push(`--${k}`,String(c[k]));
       if(job) {res.writeHead(409).end('A Bend job is already running. Cancel it before starting another.');return;}
       const child=spawn(process.execPath,args,{cwd:root,detached:true,stdio:['ignore','pipe','pipe']});
       const current={child,cancelled:false};job=current;
@@ -54,7 +55,7 @@ createServer(async(req,res)=>{
     if(req.headers['if-none-match']===etag){res.writeHead(304,headers).end();return;}
     const acceptsGzip=/(?:^|,)\s*gzip\s*(?:;\s*q=(?!0(?:\.0*)?(?:\s*,|\s*$))[\d.]+)?\s*(?:,|$)/i.test(req.headers['accept-encoding']||'');
     let data;
-    if(['application/json','text/javascript'].includes(file[1])&&acceptsGzip){
+    if(['application/json','text/javascript','image/x-portable-pixmap'].includes(file[1])&&acceptsGzip){
       let cached=compressed.get(path);
       if(cached?.etag!==etag){cached={etag,data:compress(await readFile(filename))};compressed.set(path,cached);}
       data=await cached.data;headers['Content-Encoding']='gzip';

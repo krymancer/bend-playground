@@ -1,5 +1,6 @@
 import {drawCubes} from './cubes.js';
 import {duration,nextTime} from './cube-clock.js';
+import {decodePpm} from './ppm.js';
 const $=id=>document.getElementById(id);
 const names=['raytracer','life','cubes','rubik'];
 let rubik=null;
@@ -59,14 +60,19 @@ function paintCubes(){
 }
 function syncControls(name){
   if(dirty.has(name))return;
-  if(name==='raytracer'&&ray){const resolution=`${ray.width},${ray.height}`;if([...$('resolution').options].some(o=>o.value===resolution))$('resolution').value=resolution;$('bounces').value=ray.bounces;}
+  if(name==='raytracer'&&ray){const resolution=`${ray.width},${ray.height}`;if([...$('resolution').options].some(o=>o.value===resolution))$('resolution').value=resolution;$('bounces').value=ray.bounces;$('ray-scene').value=ray.scene??'mirrors';$('ray-samples').value=ray.samples??16;$('ray-seed').value=ray.seed??42;}
   if(name==='life'&&life){if([...$('size').options].some(o=>Number(o.value)===life.size))$('size').value=life.size;$('pattern').value=life.pattern;$('steps').value=life.steps;$('seed').value=life.seed;}
   if(name==='cubes'&&cubes)$('cube-digits').value=cubes.digits;
+}
+function rayControls(){
+  const scene=$('ray-scene').value;
+  $('path-controls').hidden=scene==='mirrors';
+  if(demo==='raytracer')$('description').textContent={mirrors:'Four spheres, one checkerboard, and a ray for every sample.',materials:'Matte, polished metal, and refracting glass under a bright sky.',weekend:'Hundreds of seeded spheres. Matte colors, rough metals, glass, and depth of field.'}[scene];
 }
 function switchDemo(name){
   demo=name;pause();
   document.querySelectorAll('.tab').forEach(b=>{const on=b.dataset.demo===name;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));});
-  for(const [key,ids] of Object.entries({raytracer:['ray-controls','ray-footer','ray-image'],life:['life-controls','life-footer','life-canvas'],cubes:['cube-controls','cube-footer','cube-replay-note','cube-canvas','cube-hud'],rubik:['rubik-controls','rubik-footer','rubik-view']}))for(const id of ids)$(id).hidden=key!==demo;
+  for(const [key,ids] of Object.entries({raytracer:['ray-controls','ray-footer','ray-canvas'],life:['life-controls','life-footer','life-canvas'],cubes:['cube-controls','cube-footer','cube-replay-note','cube-canvas','cube-hud'],rubik:['rubik-controls','rubik-footer','rubik-view']}))for(const id of ids)$(id).hidden=key!==demo;
   $('stage').classList.toggle('cubes-stage',demo==='cubes');
   $('stage').classList.toggle('rubik-stage',demo==='rubik');
   document.querySelector('.preview').classList.toggle('rubik-preview',demo==='rubik');
@@ -78,7 +84,13 @@ function switchDemo(name){
   const data={raytracer:ray,life,cubes}[demo];stats(data);$('empty').hidden=!!data;
   $('empty').textContent=pending.has(name)?'Loading saved output…':'No output yet. Run the experiment to begin.';
   if(demo==='life'){$('life-canvas').hidden=!life;if(data)$('output-tag').textContent=`${data.size} × ${data.size} · B3 / S23`;paintLife();}
-  if(demo==='raytracer'){$('ray-image').hidden=!ray;if(data)$('output-tag').textContent=`${data.width} × ${data.height} · 4 SAMPLES / PIXEL`;}
+  if(demo==='raytracer'){
+    rayControls();$('ray-canvas').hidden=!ray;
+    if(data){
+      $('output-tag').textContent=`${data.width} × ${data.height} · ${data.samples??4} SAMPLES / PIXEL · RGB / PPM`;
+      $('ray-note').textContent=data.scene&&data.scene!=='mirrors'?'Path tracing · matte / metal / glass · depth of field':'Analytic intersections · hard shadows · recursive reflections';
+    }
+  }
   if(demo==='cubes'){
     $('cube-canvas').hidden=!cubes;$('cube-hud').hidden=!cubes;
     if(data){
@@ -98,7 +110,18 @@ async function refresh(name,force=false){
     if(name==='rubik'){const {createRubik}=await import('./rubik.js');rubik=createRubik();rubik.setActive(demo==='rubik');loaded.add(name);return;}
     const data=await read(name);
     if(versions.get(name)!==version)return;
-    if(name==='raytracer'){ray=data;if(ray)$('ray-image').src=`/output/raytracer.png?t=${encodeURIComponent(ray.createdAt)}`;}
+    if(name==='raytracer'){
+      if(data){
+        const response=await fetch(`/output/raytracer.ppm?t=${encodeURIComponent(data.createdAt)}`,{cache:'no-cache'});
+        if(!response.ok)throw new Error('RGB output is missing. Render the scene to generate a PPM file.');
+        const pixels=decodePpm(await response.text());
+        if(pixels.width!==data.width||pixels.height!==data.height)throw new Error('RGB output dimensions changed. Render the scene again.');
+        if(versions.get(name)!==version)return;
+        const canvas=$('ray-canvas');canvas.width=pixels.width;canvas.height=pixels.height;
+        canvas.getContext('2d').putImageData(new ImageData(pixels.rgba,pixels.width,pixels.height),0,0);
+      }
+      ray=data;
+    }
     else if(name==='life'){life=data;frame=0;}
     else{cubes=data;cursor=0;}
     if(!loaded.has(name))syncControls(name);
@@ -114,6 +137,7 @@ async function selectDemo(name){
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{history.replaceState(null,'',`#${b.dataset.demo}`);selectDemo(b.dataset.demo);}));
 window.addEventListener('hashchange',()=>{if(names.includes(location.hash.slice(1)))selectDemo(location.hash.slice(1));});
 for(const [name,id] of Object.entries({raytracer:'ray-controls',life:'life-controls',cubes:'cube-controls'}))$(id).addEventListener('input',()=>dirty.add(name));
+$('ray-scene').addEventListener('change',()=>{$('bounces').value=$('ray-scene').value==='mirrors'?3:12;$('ray-samples').value=16;rayControls();});
 $('play').addEventListener('click',()=>{if(!life)return;if(playing){pause();return;}if(frame===life.frames.length-1)frame=0;playing=true;last=0;$('play').textContent='Ⅱ Pause';$('play').setAttribute('aria-label','Pause replay');});
 $('step').addEventListener('click',()=>{pause();if(life){frame=Math.min(frame+1,life.frames.length-1);paintLife();}});
 $('timeline').addEventListener('input',()=>{pause();frame=Number($('timeline').value);paintLife();});
@@ -135,14 +159,14 @@ $('run').addEventListener('click',async()=>{
   const showProgress=()=>{$('status').textContent=`${phase} ${name==='cubes'?'π blocks':name==='life'?'Life':'ray tracer'} · ${Math.floor((performance.now()-start)/1000)}s elapsed. ${phase==='Computing'?'Running the selected experiment.':''}`;};
   showProgress();const timer=setInterval(showProgress,1000);
   const backend=$('backend').value,body={demo:name,gpu:backend==='gpu',threads:backend==='cpu8'?8:1};
-  if(name==='raytracer'){[body.width,body.height]=$('resolution').value.split(',').map(Number);body.bounces=$('bounces').value;}
+  if(name==='raytracer'){[body.width,body.height]=$('resolution').value.split(',').map(Number);Object.assign(body,{bounces:$('bounces').value,scene:$('ray-scene').value,samples:$('ray-samples').value,seed:$('ray-seed').value});}
   else if(name==='cubes')body.digits=$('cube-digits').value;
   else Object.assign(body,{size:$('size').value,steps:$('steps').value,seed:$('seed').value,pattern:$('pattern').value});
   try{
     const r=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const text=await r.text();if(!r.ok)throw new Error(text);
     phase='Loading';$('cancel').hidden=true;showProgress();
-    await refresh(name,true);$('status').textContent=name==='raytracer'?'Render complete. Your PNG is ready.':'Replay ready. Press Play to watch.';
+    await refresh(name,true);$('status').textContent=name==='raytracer'?'Render complete. RGB pixels drawn; PPM ready to save.':'Replay ready. Press Play to watch.';
   }catch(e){$('status').textContent=e.message;$('status').classList.add('error');}finally{clearInterval(timer);running=false;btn.disabled=false;$('cancel').hidden=true;}
 });
 $('cancel').addEventListener('click',async()=>{
