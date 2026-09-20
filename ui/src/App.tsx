@@ -1,0 +1,68 @@
+import { useCallback, useEffect, useState } from 'react'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { JobProvider } from '@/components/RunPanel'
+import { Raytracer } from '@/demos/Raytracer'
+import { Life } from '@/demos/Life'
+import { Cubes } from '@/demos/Cubes'
+import { Rubik } from '@/demos/Rubik'
+import { readOutput } from '@/lib/api'
+import { DEMOS, type CubesOutput, type DemoName, type LifeOutput, type RayOutput } from '@/lib/types'
+
+const TABS: { id: DemoName; label: string }[] = [
+  { id: 'raytracer', label: 'Ray tracer' }, { id: 'life', label: 'Game of Life' }, { id: 'cubes', label: 'π cubes' }, { id: 'rubik', label: 'Rubik graph' },
+]
+const fromHash = (): DemoName => { const h = location.hash.slice(1) as DemoName; return DEMOS.includes(h) ? h : 'raytracer' }
+
+interface Slot<T> { data: T | null; loading: boolean; error: string | null; loaded: boolean }
+const empty = { data: null, loading: false, error: null, loaded: false }
+
+export default function App() {
+  const [demo, setDemo] = useState<DemoName>(fromHash)
+  const [ray, setRay] = useState<Slot<RayOutput>>(empty)
+  const [life, setLife] = useState<Slot<LifeOutput>>(empty)
+  const [cubes, setCubes] = useState<Slot<CubesOutput>>(empty)
+
+  useEffect(() => { const h = () => setDemo(fromHash()); addEventListener('hashchange', h); return () => removeEventListener('hashchange', h) }, [])
+
+  const load = useCallback(async <T,>(name: string, set: (f: (s: Slot<T>) => Slot<T>) => void) => {
+    set(s => ({ ...s, loading: true, error: null }))
+    try { const data = await readOutput<T>(name); set(() => ({ data, loading: false, error: null, loaded: true })) }
+    catch (e) { set(s => ({ ...s, loading: false, error: (e as Error).message, loaded: true })) }
+  }, [])
+  const reloadRay = useCallback(() => load<RayOutput>('raytracer', setRay), [load])
+  const reloadLife = useCallback(() => load<LifeOutput>('life', setLife), [load])
+  const reloadCubes = useCallback(() => load<CubesOutput>('cubes', setCubes), [load])
+
+  useEffect(() => {
+    if (demo === 'raytracer' && !ray.loaded && !ray.loading) void reloadRay()
+    if (demo === 'life' && !life.loaded && !life.loading) void reloadLife()
+    if (demo === 'cubes' && !cubes.loaded && !cubes.loading) void reloadCubes()
+  }, [demo, ray, life, cubes, reloadRay, reloadLife, reloadCubes])
+
+  const select = (id: string) => { history.replaceState(null, '', `#${id}`); setDemo(id as DemoName) }
+
+  return (
+    <TooltipProvider>
+      <JobProvider>
+        <div className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
+          <header className="flex h-14 shrink-0 items-center gap-4 border-b bg-card px-4">
+            <div className="hidden shrink-0 items-center gap-2.5 whitespace-nowrap sm:flex">
+              <span className="size-2.5 rounded-sm bg-foreground" aria-hidden />
+              <span className="hidden text-sm font-semibold tracking-tight sm:inline">Bend playground</span>
+            </div>
+            <Tabs value={demo} onValueChange={select} className="min-w-0 flex-1 sm:ml-auto sm:flex-initial">
+              <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
+                {TABS.map(t => <TabsTrigger key={t.id} value={t.id} className="shrink-0">{t.label}</TabsTrigger>)}
+              </TabsList>
+            </Tabs>
+          </header>
+          {demo === 'raytracer' && <Raytracer {...ray} reload={reloadRay} />}
+          {demo === 'life' && <Life {...life} reload={reloadLife} active />}
+          {demo === 'cubes' && <Cubes {...cubes} reload={reloadCubes} active />}
+          {demo === 'rubik' && <Rubik active />}
+        </div>
+      </JobProvider>
+    </TooltipProvider>
+  )
+}

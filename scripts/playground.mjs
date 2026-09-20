@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
-import { resolve } from 'node:path';
+import { resolve, relative, extname, sep } from 'node:path';
 import { config } from './demo-lib.mjs';
 import {buildRubik} from './build-rubik.mjs';
 await buildRubik();
@@ -11,12 +11,19 @@ import { promisify } from 'node:util';
 
 const compress=promisify(gzip),compressed=new Map();
 
-const files={'/':['web/index.html','text/html'],'/app.js':['web/app.js','text/javascript'],'/cubes.js':['web/cubes.js','text/javascript'],'/style.css':['web/style.css','text/css'],
-  '/rubik.js':['web/rubik.js','text/javascript'],'/rubik-engine.js':['build/rubik-engine.js','text/javascript'],
-  '/cube-clock.js':['web/cube-clock.js','text/javascript'],
-  '/ppm.js':['web/ppm.js','text/javascript'],
-  '/output/raytracer.ppm':['output/raytracer.ppm','image/x-portable-pixmap'],'/output/raytracer.json':['output/raytracer.json','application/json'],
-  '/output/life.json':['output/life.json','application/json'],'/output/cubes.json':['output/cubes.json','application/json'],'/output/benchmarks.json':['output/benchmarks.json','application/json']};
+const outputs={'/output/raytracer.ppm':['output/raytracer.ppm','image/x-portable-pixmap'],'/output/raytracer.json':['output/raytracer.json','application/json'],
+  '/output/life.json':['output/life.json','application/json'],'/output/cubes.json':['output/cubes.json','application/json'],'/output/benchmarks.json':['output/benchmarks.json','application/json'],
+  '/rubik-engine.js':['build/rubik-engine.js','text/javascript']};
+const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2','.json':'application/json'};
+// The React UI (ui/) is built by Vite into build/ui; run `npm run build:ui` or `npm run playground`.
+const ui=resolve(root,'build/ui');
+function resolveFile(path){
+  if(outputs[path])return outputs[path];
+  const target=resolve(ui,'.'+path);
+  if(target!==ui&&!target.startsWith(ui+sep))return null;
+  if(path==='/'||!extname(path))return ['build/ui/index.html','text/html'];
+  return [relative(root,target),types[extname(path)]||'application/octet-stream'];
+}
 let job=null;
 createServer(async(req,res)=>{
   const path=new URL(req.url,'http://localhost').pathname;
@@ -47,20 +54,20 @@ createServer(async(req,res)=>{
     } catch(e) {res.writeHead(400).end(e.message);}
     return;
   }
-  const file=files[path];
-  if(req.method!=='GET'||!file) {res.writeHead(404).end('Not found');return;}
+  const file=req.method==='GET'?resolveFile(path):null;
+  if(!file) {res.writeHead(404).end('Not found');return;}
   try {
     const filename=resolve(root,file[0]),info=await stat(filename),etag=`W/"${info.size}-${info.mtimeMs}"`;
-    const headers={'Content-Type':file[1],'Cache-Control':'no-cache',ETag:etag,Vary:'Accept-Encoding'};
+    const headers={'Content-Type':file[1],'Cache-Control':path.startsWith('/assets/')?'public, max-age=31536000, immutable':'no-cache',ETag:etag,Vary:'Accept-Encoding'};
     if(req.headers['if-none-match']===etag){res.writeHead(304,headers).end();return;}
     const acceptsGzip=/(?:^|,)\s*gzip\s*(?:;\s*q=(?!0(?:\.0*)?(?:\s*,|\s*$))[\d.]+)?\s*(?:,|$)/i.test(req.headers['accept-encoding']||'');
     let data;
-    if(['application/json','text/javascript','image/x-portable-pixmap'].includes(file[1])&&acceptsGzip){
+    if(['application/json','text/javascript','text/css','text/html','image/x-portable-pixmap'].includes(file[1])&&acceptsGzip){
       let cached=compressed.get(path);
       if(cached?.etag!==etag){cached={etag,data:compress(await readFile(filename))};compressed.set(path,cached);}
       data=await cached.data;headers['Content-Encoding']='gzip';
     }else data=await readFile(filename);
     res.writeHead(200,{...headers,'Content-Length':data.length}).end(data);
   }
-  catch {res.writeHead(404).end('No output yet. Generate this demo first.');}
+  catch {res.writeHead(404).end(outputs[path]?'No output yet. Generate this demo first.':'UI not built. Run `npm run build:ui` first.');}
 }).listen(Number(process.env.PORT||3000),'127.0.0.1',()=>console.log(`Bend playground: http://localhost:${process.env.PORT||3000}`));

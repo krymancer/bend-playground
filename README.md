@@ -15,7 +15,10 @@ npm run playground
 ```
 
 Open **http://localhost:3000** to view the rendered scene, Life replay, and π
-cubes. You can change settings, choose CPU or GPU, and run each experiment from the viewer.
+cubes. The viewer is a React app in `ui/` built with Vite, Tailwind CSS, and
+shadcn/ui (zinc theme). `npm run playground` builds it into `build/ui` and
+starts the server; `npm run dev:ui` starts Vite with hot reload, proxying
+`/api` and `/output` to a running `npm run serve`. You can change settings, choose CPU or GPU, and run each experiment from the viewer.
 Life has play, pause, single-step, generation scrubbing, and speed controls.
 The ray tracer saves plain-text RGB colors as `output/raytracer.ppm`, using the
 P3 format from [Ray Tracing in One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html#outputanimage/theppmimageformat).
