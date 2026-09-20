@@ -1,5 +1,5 @@
-export type DemoName = 'raytracer' | 'life' | 'cubes' | 'rubik' | 'montecarlo' | 'buffon' | 'times-table'
-export const DEMOS: DemoName[] = ['raytracer', 'life', 'cubes', 'rubik', 'montecarlo', 'buffon', 'times-table']
+export type DemoName = 'raytracer' | 'life' | 'cubes' | 'rubik' | 'montecarlo' | 'buffon' | 'times-table' | 'fourier' | 'epicycles' | 'shakespeare' | 'sorting' | 'polar'
+export const DEMOS: DemoName[] = ['raytracer', 'life', 'cubes', 'rubik', 'montecarlo', 'buffon', 'times-table', 'fourier', 'epicycles', 'shakespeare', 'sorting', 'polar']
 
 export interface OutputMeta {
   backend: string

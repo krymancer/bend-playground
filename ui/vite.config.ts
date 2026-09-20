@@ -15,6 +15,7 @@ export default defineConfig({
       '/output': backend,
       '/rubik-engine.js': backend,
       '/times-table-engine.js': backend,
+      ...Object.fromEntries(['fourier','sorting','shakespeare','polar'].map(n => [`/${n}-engine.js`, backend])),
     },
   },
 })

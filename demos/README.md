@@ -1,6 +1,6 @@
 # Visual Bend experiments
 
-All seven demos implement their computation in Bend. The official Bend examples
+All twelve demos implement their computation in Bend. The official Bend examples
 and guide informed the runtime setup; no JavaScript physics or Life rules are used.
 The native demos produce pixels or recorded simulation states. The Rubik demo
 runs Bend's JavaScript output live in the browser and displays vector geometry.
@@ -340,3 +340,64 @@ word-boundary neighbors, torus wrapping, a stable block, a blinker and a glider.
 Ray tests cover forward/missing/inside-sphere intersections, reflection, and
 finite, varied image output. These are numerical tests, not formal proofs of
 the rendering or Life implementations.
+
+## Fourier, epicycles, Shakespeare, sorting, and polar curves
+
+These five tabs adapt [krymancer/p5-projects](https://github.com/krymancer/p5-projects).
+All mathematical/algorithmic kernels are Bend. The server builds and caches four
+small JavaScript modules with `npm run build:labs`; each active tab uses a browser
+worker. These are browser CPU demos. Their controls and animation do not invoke
+the server, build native binaries, or compile shaders. Switching away terminates
+the worker. The `Bend prepare` timing includes worker-side result packaging but
+excludes fetching its module. Source changes rebuild the affected module on
+server startup; settings changes reuse it.
+
+- **Fourier** (`#fourier`): odd harmonics with amplitudes `4/(πn)` build a square
+  wave. Adjust terms, playback speed, or phase. Bend computes coefficients,
+  rotating vectors, and the reconstruction. The overshoot near discontinuities
+  remains visible; it is not a numerical error to smooth away.
+- **Epicycles** (`#epicycles`): complex DFT of the saved p5 drawing, ordered by
+  coefficient amplitude, with signed frequencies. `demos/fourier/drawing.csv`
+  comes from the original `epicycle/data.csv`; the original π rotation is retained.
+  Draw your own closed outline with a mouse or touch. The UI normalizes input
+  coordinates and resamples drawn outlines to 256 evenly spaced points. Bend
+  computes the transform and curve. Changing term count reuses the transform;
+  the full coefficient set reconstructs the original samples within F32 error.
+- **Shakespeare** (`#shakespeare`): fitness-weighted selection, crossover that
+  preserves correct letters, mutation of unmatched letters, and one elite survivor.
+  Target phrase, population, mutation probability, and seed apply on Restart.
+  Run/pause or advance one generation. An independent-random-typing mode starts
+  every population afresh; best-so-far is display history, not selection. The
+  original p5 program is a guided genetic search, not independent monkey typing.
+  Unicode characters in the target are included in the sampling alphabet. A
+  generation has a separate seed stream from its offspring, avoiding correlated
+  reuse of mutation choices across generations. Zero mutation may stall a search.
+- **Sorting** (`#sorting`): quicksort (Lomuto, last pivot), top-down merge sort,
+  and bubble sort. Compare random, reversed, sorted, and few-distinct inputs with
+  the same seed. Bend produces a compact operation tree, flattened into comparison,
+  swap, write, and merge-buffer events. No full-array frame is saved for every
+  comparison. The UI applies the recorded operations for play/pause, single-step,
+  reset, and scrubbing. Merge comparisons read the visible saved buffer. Counts
+  reflect actual comparisons and array writes; buffer-copy events are shown
+  separately. Bubble sort uses shrinking passes without an early-exit optimization;
+  both it and last-pivot quicksort have intentionally visible quadratic cases.
+- **Polar curves** (`#polar`): the original parametric heart and quadratic spiral,
+  plus an adjustable rose, cardioid, and Archimedean spiral. The original code's
+  spiral uses `r ∝ θ²`, despite its Archimedean label. Here the separate Archimedean
+  option uses `r ∝ θ`. Bend computes 2,049 coordinates per settings change; the
+  browser reveals the curve and its radial guide during playback.
+
+Local browser observations at default settings: Fourier preparation about 3 ms,
+original-drawing DFT/reconstruction about 15 ms, 128-bar quicksort about 6 ms.
+These are single measurements. Larger sorting traces still perform their actual
+algorithmic work (512-bar bubble sort took about 270 ms in a Node run), with the
+worker keeping that work off the UI thread. The four generated modules together
+are about 45 KB before compression. Browsing verified no animation network
+requests, all three sorting replays, drawn-input transforms, target convergence,
+pausing/scrubbing, and mobile layout.
+
+Tests independently verify complex DFT reconstruction and harmonic amplitudes,
+curve equations, all three sorted results and complete event replays, comparison
+counts, nonmutation of input trees, genetic fitness and weighted selection,
+locked crossover, deterministic seeds, population size, and default-phrase
+convergence. These are tests of the implemented algorithms, not formal proofs.

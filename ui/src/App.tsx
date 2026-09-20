@@ -8,12 +8,17 @@ import { Cubes } from '@/demos/Cubes'
 import { Rubik } from '@/demos/Rubik'
 import { Probability } from '@/demos/Probability'
 import { TimesTable } from '@/demos/TimesTable'
+import { Fourier } from '@/demos/Fourier'
+import { Sorting } from '@/demos/Sorting'
+import { Shakespeare } from '@/demos/Shakespeare'
+import { Polar } from '@/demos/Polar'
 import { readOutput } from '@/lib/api'
 import { DEMOS, type CubesOutput, type DemoName, type LifeOutput, type RayOutput, type ProbabilityOutput } from '@/lib/types'
 
 const TABS: { id: DemoName; label: string }[] = [
   { id: 'raytracer', label: 'Ray tracer' }, { id: 'life', label: 'Game of Life' }, { id: 'cubes', label: 'π cubes' }, { id: 'rubik', label: 'Rubik graph' },
   { id: 'montecarlo', label: 'Monte Carlo π' }, { id: 'buffon', label: 'Buffon’s needle' }, { id: 'times-table', label: 'Times table' },
+  { id: 'fourier', label: 'Fourier' }, { id: 'epicycles', label: 'Epicycles' }, { id: 'shakespeare', label: 'Shakespeare' }, { id: 'sorting', label: 'Sorting' }, { id: 'polar', label: 'Polar curves' },
 ]
 const fromHash = (): DemoName => { const h = location.hash.slice(1) as DemoName; return DEMOS.includes(h) ? h : 'raytracer' }
 
@@ -82,6 +87,11 @@ export default function App() {
           {demo === 'montecarlo' && <Probability key="montecarlo" method="montecarlo" {...montecarlo} reload={reloadMontecarlo} />}
           {demo === 'buffon' && <Probability key="buffon" method="buffon" {...buffon} reload={reloadBuffon} />}
           {demo === 'times-table' && <TimesTable />}
+          {demo === 'fourier' && <Fourier key="wave" mode="wave" />}
+          {demo === 'epicycles' && <Fourier key="drawing" mode="drawing" />}
+          {demo === 'sorting' && <Sorting />}
+          {demo === 'shakespeare' && <Shakespeare />}
+          {demo === 'polar' && <Polar />}
         </div>
       </JobProvider>
     </TooltipProvider>

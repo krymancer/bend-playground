@@ -1,9 +1,10 @@
 # Bend playground
 
-Seven experiments: ray tracing, Conway's Game of Life, π from colliding blocks,
-Rubik's cube, Monte Carlo π, Buffon's needle, and circle times tables.
+Twelve experiments: ray tracing, Conway's Game of Life, π from colliding blocks,
+Rubik's cube, Monte Carlo π, Buffon's needle, circle times tables, Fourier series,
+epicycles, Shakespeare's monkeys, sorting, and polar curves.
 The numerical simulations run Bend 2 on native CPU or NVIDIA CUDA. Rubik's cube
-and the animated times table run Bend compiled to JavaScript in the browser.
+and the interactive math/algorithm demos run Bend compiled to JavaScript in the browser.
 
 ## Visual playground
 
@@ -57,6 +58,21 @@ include every impact; large runs sample block/wall pairs at the requested mass
 ratio. Playback follows physical time, with interpolation between samples. The digit
 input has no application-level upper cutoff; the existing numerical and Nat
 overflow limitations still apply.
+
+Adapted from [the p5 projects](https://github.com/krymancer/p5-projects):
+
+- **Fourier** (`#fourier`): rotating odd harmonics reconstruct a square wave.
+- **Epicycles** (`#epicycles`): trace the original drawing or draw your own outline;
+  change the number of Fourier terms live.
+- **Shakespeare** (`#shakespeare`): evolve text with selection, crossover, and
+  mutation, or compare with independent random typing. Supports custom targets.
+- **Sorting** (`#sorting`): quicksort, merge sort, and bubble sort, with actual
+  operation counts, play/pause, single-step, and scrubbing.
+- **Polar curves** (`#polar`): heart, quadratic and Archimedean spirals, rose,
+  and cardioid, with animated tracing and adjustable parameters.
+
+These new tabs use cached Bend modules in browser workers. No server round trips
+or recompilation occur during animation or settings changes.
 
 On this machine, Tailscale Serve exposes the viewer privately at
 **https://panam.tailcd7688.ts.net/**; append `#cubes` to open the cubes tab.
