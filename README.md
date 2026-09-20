@@ -1,7 +1,9 @@
 # Bend playground
 
-Three experiments: a ray tracer, Conway's Game of Life, and pi from colliding
-blocks. Numerical computation runs in Bend 2, on native CPU or NVIDIA CUDA.
+Four experiments: a ray tracer, Conway's Game of Life, pi from colliding
+blocks, and an interactive Rubik's cube with a linked sticker graph.
+The first three run Bend 2 on native CPU or NVIDIA CUDA. Rubik's cube runs
+Bend compiled to JavaScript directly in the browser.
 
 ## Visual playground
 
@@ -17,10 +19,16 @@ cubes. You can change settings, choose CPU or GPU, and run each experiment from 
 Life has play, pause, single-step, generation scrubbing, and speed controls.
 The ray tracer saves an ordinary PNG you can download.
 
+The **Rubik graph** tab (`#rubik`) has live face turns, scramble, undo, and
+drag-to-orbit controls. Bend computes the sticker permutations; SVG draws the
+cube and linked graph. Turns run locally without server requests or recompiling.
+“Undo all” reverses the recorded moves; it is not a solver for arbitrary cubes.
+The server builds the browser module once and reuses it until its source changes.
+
 The **π cubes** tab animates Bend-computed collision positions and velocities,
 with play/pause, step, reset, a timeline, and a velocity-space plot. Small runs
 include every impact; large runs sample block/wall pairs at the requested mass
-ratio. Playback pacing is illustrative rather than physical time. The digit
+ratio. Playback follows physical time, with interpolation between samples. The digit
 input has no application-level upper cutoff; the existing numerical and Nat
 overflow limitations still apply.
 

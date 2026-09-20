@@ -1,12 +1,14 @@
 import {drawCubes} from './cubes.js';
 import {duration,nextTime} from './cube-clock.js';
 const $=id=>document.getElementById(id);
-const names=['raytracer','life','cubes'];
+const names=['raytracer','life','cubes','rubik'];
+let rubik=null;
 let demo=names.includes(location.hash.slice(1))?location.hash.slice(1):'raytracer';
 let ray=null,life=null,cubes=null,frame=0,cursor=0,playing=false,last=0;
 const loaded=new Set(),pending=new Map(),dirty=new Set(),versions=new Map();
 let running=false,lifePixels=null,lifeWords=null;
 const descriptions={
+  rubik:['LIVE · 54 STICKERS', 'Turn the cube.', 'Every move updates the cube and graph together.'],
   raytracer:['4 SAMPLES / PIXEL', 'Trace some light.', 'Four spheres, one checkerboard, and a ray for every sample.'],
   life:['B3 / S23 · TOROIDAL GRID', 'Let it evolve.', 'Every cell follows the same rule. Patterns emerge from their neighbors.'],
   cubes:['ELASTIC COLLISIONS', 'Count the collisions.', 'Two blocks, a wall, and the digits of π. Every collision state is computed in Bend.']
@@ -64,10 +66,15 @@ function syncControls(name){
 function switchDemo(name){
   demo=name;pause();
   document.querySelectorAll('.tab').forEach(b=>{const on=b.dataset.demo===name;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));});
-  for(const [key,ids] of Object.entries({raytracer:['ray-controls','ray-footer','ray-image'],life:['life-controls','life-footer','life-canvas'],cubes:['cube-controls','cube-footer','cube-replay-note','cube-canvas','cube-hud']}))for(const id of ids)$(id).hidden=key!==demo;
+  for(const [key,ids] of Object.entries({raytracer:['ray-controls','ray-footer','ray-image'],life:['life-controls','life-footer','life-canvas'],cubes:['cube-controls','cube-footer','cube-replay-note','cube-canvas','cube-hud'],rubik:['rubik-controls','rubik-footer','rubik-view']}))for(const id of ids)$(id).hidden=key!==demo;
   $('stage').classList.toggle('cubes-stage',demo==='cubes');
+  $('stage').classList.toggle('rubik-stage',demo==='rubik');
+  document.querySelector('.preview').classList.toggle('rubik-preview',demo==='rubik');
+  $('backend-label').hidden=$('native-run').hidden=demo==='rubik';
+  rubik?.setActive(demo==='rubik');
   ['output-tag','control-title','description'].forEach((id,i)=>$(id).textContent=descriptions[demo][i]);
   $('run').innerHTML=demo==='raytracer'?'Render scene <span>↗</span>':demo==='life'?'Generate replay <span>↗</span>':'Calculate & animate <span>↗</span>';
+  if(demo==='rubik'){$('empty').hidden=true;return;}
   const data={raytracer:ray,life,cubes}[demo];stats(data);$('empty').hidden=!!data;
   $('empty').textContent=pending.has(name)?'Loading saved output…':'No output yet. Run the experiment to begin.';
   if(demo==='life'){$('life-canvas').hidden=!life;if(data)$('output-tag').textContent=`${data.size} × ${data.size} · B3 / S23`;paintLife();}
@@ -88,6 +95,7 @@ async function refresh(name,force=false){
   if(!force){if(pending.has(name))return pending.get(name);if(loaded.has(name))return;}
   const version=(versions.get(name)||0)+1;versions.set(name,version);
   const task=(async()=>{
+    if(name==='rubik'){const {createRubik}=await import('./rubik.js');rubik=createRubik();rubik.setActive(demo==='rubik');loaded.add(name);return;}
     const data=await read(name);
     if(versions.get(name)!==version)return;
     if(name==='raytracer'){ray=data;if(ray)$('ray-image').src=`/output/raytracer.png?t=${encodeURIComponent(ray.createdAt)}`;}
@@ -121,7 +129,7 @@ function tick(now){
 requestAnimationFrame(tick);
 new ResizeObserver(()=>{if(demo==='cubes'&&cubes)paintCubes();}).observe($('stage'));
 $('run').addEventListener('click',async()=>{
-  if(running)return;
+  if(running||demo==='rubik')return;
   pause();const btn=$('run'),name=demo;running=true;btn.disabled=true;$('cancel').hidden=false;$('cancel').disabled=false;$('status').classList.remove('error');
   const start=performance.now();let phase='Computing';
   const showProgress=()=>{$('status').textContent=`${phase} ${name==='cubes'?'π blocks':name==='life'?'Life':'ray tracer'} · ${Math.floor((performance.now()-start)/1000)}s elapsed. ${phase==='Computing'?'Running the selected experiment.':''}`;};

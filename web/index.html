@@ -14,6 +14,7 @@
       <button class="tab active" data-demo="raytracer" role="tab" aria-selected="true"><span class="tab-index" aria-hidden="true">01</span>Ray tracer</button>
       <button class="tab" data-demo="life" role="tab" aria-selected="false"><span class="tab-index" aria-hidden="true">02</span>Game of Life</button>
       <button class="tab" data-demo="cubes" role="tab" aria-selected="false"><span class="tab-index" aria-hidden="true">03</span>π cubes</button>
+      <button class="tab" data-demo="rubik" role="tab" aria-selected="false"><span class="tab-index" aria-hidden="true">04</span>Rubik graph</button>
     </div>
   </nav>
 
@@ -40,6 +41,7 @@
         <img id="ray-image" alt="Bend ray-traced scene with reflective colored spheres on a checkered floor">
         <canvas id="life-canvas" hidden aria-label="Game of Life generation"></canvas>
         <canvas id="cube-canvas" hidden aria-label="Two colliding blocks, a wall, and their velocity-space trajectory"></canvas>
+        <div id="rubik-view" class="rubik-view" hidden><svg id="rubik-cube" viewBox="0 0 500 500" role="img" aria-label="Interactive 3D Rubik’s cube; drag to rotate the view"></svg><svg id="rubik-graph" viewBox="0 0 500 500" role="group" aria-label="Cube sticker positions and face-turn connections"></svg></div>
         <p id="empty" class="empty" hidden>No output yet. Run the experiment to begin.</p>
       </div>
 
@@ -73,6 +75,7 @@
         </div>
       </div>
       <p id="cube-replay-note" class="replay-note" hidden>Playback follows physical time.</p>
+      <div id="rubik-footer" class="preview-footer life-footer" hidden><button id="rubik-pause">Ⅱ Pause</button><button id="rubik-undo">Undo move</button><button id="rubik-reset">Reset cube</button><span>U R F D L B · Shift = inverse · Drag the cube to orbit</span></div>
     </section>
 
     <aside>
@@ -80,7 +83,7 @@
       <h2 id="control-title">Trace some light.</h2>
       <p class="description" id="description">Four spheres, one checkerboard, and a ray for every sample.</p>
 
-      <label>Compute device<select id="backend"><option value="gpu">NVIDIA GPU · CUDA</option><option value="cpu1">CPU · 1 thread</option><option value="cpu8">CPU · 8 threads</option></select></label>
+      <label id="backend-label">Compute device<select id="backend"><option value="gpu">NVIDIA GPU · CUDA</option><option value="cpu1">CPU · 1 thread</option><option value="cpu8">CPU · 8 threads</option></select></label>
 
       <div id="ray-controls">
         <label>Resolution<select id="resolution"><option value="256,160">256 × 160 · quick</option><option value="512,320" selected>512 × 320</option><option value="1024,640">1024 × 640</option></select></label>
@@ -106,7 +109,18 @@
         </div>
       </div>
 
-      <button class="run" id="run">Render scene <span>↗</span></button>
+      <div id="rubik-controls" hidden>
+        <p class="rubik-runtime">LIVE · BEND → JAVASCRIPT</p>
+        <div class="rubik-state"><strong id="rubik-state">Loading…</strong><span id="rubik-moves"></span></div>
+        <div id="rubik-turns" class="rubik-turns" aria-label="Face turns"></div>
+        <label>Turn duration<select id="rubik-speed"><option value="150">Fast · 0.15 s</option><option value="450" selected>Normal · 0.45 s</option><option value="1000">Slow · 1 s</option></select></label>
+        <div class="rubik-scramble-row"><label>Scramble moves<input id="rubik-length" type="number" min="1" step="1" value="20" required></label><button id="rubik-scramble">Scramble</button></div>
+        <button id="rubik-unwind" class="run">Undo all ↶</button><p class="rubik-help">Returns to solved by reversing the move history.</p>
+        <label>Move history</label><div id="rubik-history" aria-live="polite"></div>
+        <p id="rubik-timing" class="backend-note"></p>
+        <p class="rubik-help">Each dot is a sticker position. Lines show where face turns can move it. Hover over a move to highlight its paths.</p>
+      </div>
+      <div id="native-run"><button class="run" id="run">Render scene <span>↗</span></button>
       <button id="cancel" class="cancel" hidden>Cancel computation</button>
       <p id="status" role="status" aria-live="polite">Ready to explore.</p>
 
@@ -115,6 +129,7 @@
         <div><span class="eyebrow">Process</span><strong id="process">—<small> ms</small></strong></div>
       </div>
       <p class="hint" id="backend-note">Run a demo to see its timing.</p>
+      </div>
     </aside>
   </div>
 </main>

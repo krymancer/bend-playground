@@ -3,6 +3,8 @@ import { readFile, stat } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 import { config } from './demo-lib.mjs';
+import {buildRubik} from './build-rubik.mjs';
+await buildRubik();
 import { root } from './setup.mjs';
 import { gzip } from 'node:zlib';
 import { promisify } from 'node:util';
@@ -10,6 +12,7 @@ import { promisify } from 'node:util';
 const compress=promisify(gzip),compressed=new Map();
 
 const files={'/':['web/index.html','text/html'],'/app.js':['web/app.js','text/javascript'],'/cubes.js':['web/cubes.js','text/javascript'],'/style.css':['web/style.css','text/css'],
+  '/rubik.js':['web/rubik.js','text/javascript'],'/rubik-engine.js':['build/rubik-engine.js','text/javascript'],
   '/cube-clock.js':['web/cube-clock.js','text/javascript'],
   '/output/raytracer.png':['output/raytracer.png','image/png'],'/output/raytracer.json':['output/raytracer.json','application/json'],
   '/output/life.json':['output/life.json','application/json'],'/output/cubes.json':['output/cubes.json','application/json'],'/output/benchmarks.json':['output/benchmarks.json','application/json']};
@@ -51,7 +54,7 @@ createServer(async(req,res)=>{
     if(req.headers['if-none-match']===etag){res.writeHead(304,headers).end();return;}
     const acceptsGzip=/(?:^|,)\s*gzip\s*(?:;\s*q=(?!0(?:\.0*)?(?:\s*,|\s*$))[\d.]+)?\s*(?:,|$)/i.test(req.headers['accept-encoding']||'');
     let data;
-    if(file[1]==='application/json'&&acceptsGzip){
+    if(['application/json','text/javascript'].includes(file[1])&&acceptsGzip){
       let cached=compressed.get(path);
       if(cached?.etag!==etag){cached={etag,data:compress(await readFile(filename))};compressed.set(path,cached);}
       data=await cached.data;headers['Content-Encoding']='gzip';

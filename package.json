@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24.0.0" },
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "setup": "node scripts/setup.mjs",
     "setup:gpu": "python3 scripts/setup-cuda.py",
@@ -19,6 +21,7 @@
     "playground": "node scripts/playground.mjs",
     "bench:demos": "node scripts/bench-demos.mjs",
     "check": "node .tools/bend/bend2/main.ts PROOF.bend",
-    "test": "node --import ./.tools/bend/bend2/main.ts --test tests/*.test.mjs"
+    "test": "node --import ./.tools/bend/bend2/main.ts --test tests/*.test.mjs",
+    "build:rubik": "node scripts/build-rubik.mjs"
   }
 }

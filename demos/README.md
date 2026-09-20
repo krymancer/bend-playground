@@ -1,8 +1,9 @@
 # Visual Bend experiments
 
-All three demos are original Bend implementations. The official Bend examples and
-guide informed the runtime setup; no JavaScript physics or Life rules are used.
-The local web viewer displays PNG pixels or recorded, bit-packed generations.
+All four demos implement their computation in Bend. The official Bend examples
+and guide informed the runtime setup; no JavaScript physics or Life rules are used.
+The native demos produce pixels or recorded simulation states. The Rubik demo
+runs Bend's JavaScript output live in the browser and displays vector geometry.
 
 ## First run
 
@@ -121,6 +122,32 @@ double-precision simulation, energy invariants and large-count replay endpoints.
 Physical-time queries are also checked against an independent event solver
 before, during and after the collision burst; browser-clock tests cover contact
 timing, velocity between impacts and continued motion after the final impact.
+
+## Rubik's cube and sticker graph
+
+Open `#rubik` in the playground. Inspired by
+[the linked visualization](https://x.com/TheMathFlow/status/2101154346583154801),
+the cube and graph share the same 54-sticker state. Each graph node is a sticker
+position, grouped by face; edges show face-turn permutations. This is not the
+graph of all possible cube states.
+
+`rubik/cube.bend` computes integer-coordinate rotations, permutations, legal
+scrambles, inverse moves, and solved-state detection. The server uses the
+official Bend compiler to build `build/rubik-engine.js` on startup, reusing it
+until the source changes. `npm run build:rubik` can also build it explicitly.
+Moves run on the browser CPU, without CUDA, server calls, or compilation per turn.
+`web/rubik.js` draws and interpolates SVG geometry; it does not implement the
+cube's permutation rules.
+
+Use the face buttons or U/R/F/D/L/B keys (Shift for inverse), or click graph
+face labels. Drag the cube to orbit. Scramble adds legal random moves; Undo
+move and Undo all reverse the recorded history. There is no arbitrary-state
+solver. Pause freezes animation, and Reset cancels queued turns and returns to
+the solved state. Switching tabs pauses any ongoing sequence.
+
+Tests check face orientations, bijective permutations, fixed centers, cubie
+integrity, inverse moves, four-turn cycles, opposite-face commutation, and
+scramble reversal.
 
 ## Tests and performance
 
