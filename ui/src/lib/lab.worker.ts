@@ -1,8 +1,9 @@
+import { asset } from './runtime'
 // Algorithm implementations are imported from Bend-generated modules. This
 // worker handles input/output, presentation ordering, and bounded scheduling.
 type Bend = Record<string, (...args: any[]) => any>
 const engines = new Map<string, Promise<Bend>>()
-const engine = (name: string) => { if (!engines.has(name)) engines.set(name, import(/* @vite-ignore */ `/${name}-engine.js`).then(m => m.default)); return engines.get(name)! }
+const engine = (name: string) => { if (!engines.has(name)) engines.set(name, import(/* @vite-ignore */ asset(`${name}-engine.js`)).then(m => m.default)); return engines.get(name)! }
 const list = (a: any[]) => a.reduceRight((tail, head) => ({ $: 'Con', head, tail }), { $: 'Nil' })
 const array = (xs: any) => { const a = []; for (let x = xs; x.$ === 'Con'; x = x.tail) a.push(x.head); return a }
 let coefficients: any[] = [], selected: any = list([])

@@ -28,6 +28,7 @@
     "serve": "node scripts/playground.mjs",
     "probability": "node scripts/demo.mjs probability",
     "build:times-table": "node scripts/build-times-table.mjs",
-    "build:labs": "node scripts/build-labs.mjs"
+    "build:labs": "node scripts/build-labs.mjs",
+    "build:pages": "node --stack-size=16000 scripts/build-pages.mjs"
   }
 }

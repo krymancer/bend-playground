@@ -6,9 +6,10 @@ import tailwindcss from '@tailwindcss/vite'
 const backend = `http://127.0.0.1:${process.env.PORT || 3000}`
 
 export default defineConfig({
+  base: process.env.VITE_STATIC === 'true' ? process.env.PAGES_BASE : '/',
   plugins: [react(), tailwindcss()],
   resolve: { alias: { '@': path.resolve(import.meta.dirname, './src') } },
-  build: { outDir: '../build/ui', emptyOutDir: true },
+  build: { outDir: process.env.VITE_STATIC === 'true' ? '../build/pages' : '../build/ui', emptyOutDir: true },
   server: {
     proxy: {
       '/api': backend,

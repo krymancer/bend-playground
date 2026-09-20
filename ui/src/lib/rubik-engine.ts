@@ -1,3 +1,4 @@
+import { asset } from './runtime'
 // Imperative SVG renderer for the Bend-compiled Rubik engine. React owns the
 // surrounding controls; this module owns the two SVG scenes and the move queue.
 const NS = 'http://www.w3.org/2000/svg'
@@ -56,7 +57,7 @@ export interface RubikEngine {
 
 let enginePromise: Promise<Cube> | null = null
 export function loadCube(): Promise<Cube> {
-  enginePromise ??= (import(/* @vite-ignore */ '/rubik-engine.js' as string) as Promise<{ default: Cube }>).then(m => m.default)
+  enginePromise ??= (import(/* @vite-ignore */ asset('rubik-engine.js')) as Promise<{ default: Cube }>).then(m => m.default)
   return enginePromise
 }
 

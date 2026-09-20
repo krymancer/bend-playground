@@ -1,3 +1,4 @@
+import { rayPpmUrl } from '@/lib/api'
 import { useEffect, useRef, useState } from 'react'
 import { Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -38,7 +39,7 @@ export function Raytracer({ data, loading, error, reload }: Props) {
     if (!data) return
     let cancelled = false
     setPixelError(null)
-    fetch(`/output/raytracer.ppm?t=${encodeURIComponent(data.createdAt)}`, { cache: 'no-cache' })
+    fetch(rayPpmUrl()!, { cache: 'no-cache' })
       .then(async r => {
         if (!r.ok) throw new Error('RGB output is missing. Render the scene to generate a PPM file.')
         const pixels = decodePpm(await r.text())
@@ -67,7 +68,7 @@ export function Raytracer({ data, loading, error, reload }: Props) {
       footer={
         <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground">
           <span>{path ? 'Path tracing · matte / metal / glass · depth of field' : 'Analytic intersections · hard shadows · recursive reflections'}</span>
-          <Button asChild size="sm" variant="ghost" disabled={!data}><a href="/output/raytracer.ppm" download="bend-raytracer.ppm"><Download />Save PPM</a></Button>
+          <Button asChild size="sm" variant="ghost" disabled={!data}><a href={rayPpmUrl()} download="bend-raytracer.ppm"><Download />Save PPM</a></Button>
         </div>
       }
       controls={

@@ -3,8 +3,9 @@
 Twelve experiments: ray tracing, Conway's Game of Life, π from colliding blocks,
 Rubik's cube, Monte Carlo π, Buffon's needle, circle times tables, Fourier series,
 epicycles, Shakespeare's monkeys, sorting, and polar curves.
-The numerical simulations run Bend 2 on native CPU or NVIDIA CUDA. Rubik's cube
-and the interactive math/algorithm demos run Bend compiled to JavaScript in the browser.
+The local server runs numerical simulations in Bend 2 on native CPU or NVIDIA
+CUDA. The standalone build runs all twelve experiments as Bend-compiled
+JavaScript in the browser.
 
 ## Visual playground
 
@@ -243,3 +244,31 @@ Files:
 - `physics.bend`, `simulate.bend`: original event-by-event reference solver.
 - `tests/`: numerical regression tests.
 - `scripts/`: pinned compiler/CUDA setup, builds and GPU launcher.
+
+## Standalone site / GitHub Pages
+
+All twelve experiments can also run without the Node server. The Pages build
+compiles the existing Bend modules to JavaScript once, then runs calculations
+on the visitor's **browser CPU**. Changing settings does not recompile Bend.
+CUDA remains available in the local server version; Pages cannot provide it.
+Heavy calculations run in a cancellable Web Worker so the controls stay responsive.
+Results remain in memory for the current tab; reloading clears them. Ray tracing
+still produces Bend-computed RGB colors and supports downloading a P3 PPM file.
+
+```sh
+npm ci --prefix ui
+npm run build:pages
+```
+
+Publish **only `build/pages/`**. The default base path is `/bend-playground/`;
+set `PAGES_BASE=/` for a domain root or `PAGES_BASE=/your-repo/` for another
+repository. The Pages output is separate from the local server's `build/ui/`.
+No saved local results, native executables, or backend credentials are bundled.
+
+`.github/workflows/pages.yml` tests and builds on pushes to `main`, then deploys
+the static artifact. In repository Settings → Pages, choose **GitHub Actions**
+as the source. Public repositories deploy automatically. For a private repository
+with a supported plan, enable Pages and set the Actions repository variable
+`PAGES_ENABLED=true`. Otherwise the workflow builds and tests but skips deployment.
+GitHub must allow Pages for the repository's visibility and plan.
+A private repository does not necessarily imply a private Pages website.

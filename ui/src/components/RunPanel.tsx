@@ -1,3 +1,4 @@
+import { standalone } from '@/lib/runtime'
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Loader2, Play, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -58,7 +59,7 @@ export function RunPanel({ demo, label, body, after, meta, onBeforeRun }: Props)
   const cancelling = useRef(false)
   return (
     <div className="grid gap-4">
-      <Field label="Compute device" htmlFor="backend">
+      {standalone ? <p className="text-xs text-muted-foreground">Browser CPU · compiled Bend<br />Results stay in this tab until you reload.</p> : <Field label="Compute device" htmlFor="backend">
         <Select value={backend} onValueChange={v => setBackend(v as Backend)}>
           <SelectTrigger id="backend" className="w-full"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -67,7 +68,7 @@ export function RunPanel({ demo, label, body, after, meta, onBeforeRun }: Props)
             <SelectItem value="cpu8">CPU · 8 threads</SelectItem>
           </SelectContent>
         </Select>
-      </Field>
+      </Field>}
       <div className="grid gap-2">
         <Button size="lg" disabled={busy} onClick={() => { onBeforeRun?.(); cancelling.current = false; void start(demo, body(), after) }}>
           {mine ? <Loader2 className="animate-spin" /> : <Play />}{mine ? (job.phase === 'loading' ? 'Loading output' : 'Computing') : label}
@@ -76,7 +77,7 @@ export function RunPanel({ demo, label, body, after, meta, onBeforeRun }: Props)
           <Button variant="outline" onClick={() => { cancelling.current = true; void cancel() }}><X />Cancel</Button>
         )}
         <p role="status" aria-live="polite" className={cn('min-h-5 text-xs', message?.error ? 'text-destructive' : 'text-muted-foreground')}>
-          {mine ? <>Running on {backend === 'gpu' ? 'the GPU' : backend === 'cpu8' ? '8 CPU threads' : '1 CPU thread'} · <Elapsed since={job.started} /> elapsed</> : busy ? 'Another experiment is running.' : message?.text ?? 'Ready.'}
+          {mine ? <>Running on {standalone ? 'your browser CPU' : backend === 'gpu' ? 'the GPU' : backend === 'cpu8' ? '8 CPU threads' : '1 CPU thread'} · <Elapsed since={job.started} /> elapsed</> : busy ? 'Another experiment is running.' : message?.text ?? 'Ready.'}
         </p>
       </div>
       <Separator />
