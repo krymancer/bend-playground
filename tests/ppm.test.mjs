@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ppm} from '../scripts/demo-lib.mjs';
-import {decodePpm} from '../web/ppm.js';
+import {decodePpm} from '../ui/src/lib/ppm.js';
 import Ray from '../demos/raytracer/ray.bend';
 
 test('PPM output uses the book’s P3 header and top-to-bottom RGB triplets',()=>{

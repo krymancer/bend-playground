@@ -213,7 +213,7 @@ scrambles, inverse moves, and solved-state detection. The server uses the
 official Bend compiler to build `build/rubik-engine.js` on startup, reusing it
 until the source changes. `npm run build:rubik` can also build it explicitly.
 Moves run on the browser CPU, without CUDA, server calls, or compilation per turn.
-`web/rubik.js` draws and interpolates SVG geometry; it does not implement the
+`ui/src/lib/rubik-engine.ts` draws and interpolates SVG geometry; it does not implement the
 cube's permutation rules.
 
 Use the face buttons or U/R/F/D/L/B keys (Shift for inverse), or click graph

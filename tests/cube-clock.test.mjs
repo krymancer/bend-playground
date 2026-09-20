@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {stateAt,duration,nextTime} from '../web/cube-clock.js';
+import {stateAt,duration,nextTime} from '../ui/src/lib/cube-clock.js';
 const data={total:'3',frames:[
   {time:0,count:0,x:1,y:3,v:0,w:-1},
   {time:2,count:1,x:1,y:1,v:-1,w:0},
