@@ -37,7 +37,8 @@ nav{display:flex;align-items:stretch;gap:32px;padding:0 24px;border-bottom:1px s
 .stage{position:relative;flex:1;min-height:0;min-width:0;overflow:hidden;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 50% 40%,#1a2528 0%,var(--stage) 70%)}
 .stage img,.stage #life-canvas{width:100%;height:100%;min-width:0;min-height:0;object-fit:contain;filter:drop-shadow(0 20px 40px #0008)}
 .stage #life-canvas{image-rendering:pixelated}
-.stage #cube-canvas{width:100%;height:100%;display:block}
+/* Keep the drawing buffer's intrinsic aspect ratio out of the stage layout. */
+.stage #cube-canvas{position:absolute;inset:0;width:100%;height:100%;min-width:0;min-height:0;display:block}
 .stage.cubes-stage{padding:0;place-items:stretch}
 .empty{color:var(--muted);font-size:14px;text-align:center;margin:0;max-width:32ch}
 
@@ -114,7 +115,7 @@ aside select:focus,aside input:focus{border-color:var(--accent);outline:none}
   .workspace{display:flex;flex-direction:column;overflow-y:auto}
   .preview{flex:none}
   .stage{height:min(58dvh,480px);padding:12px}
-  .stage.cubes-stage{height:min(52dvh,420px)}
+  .stage.cubes-stage{flex:none;height:min(52dvh,420px)}
   .preview-head{padding:8px 14px}
   .preview-footer{padding:12px 14px}
   .transport{grid-template-columns:1fr auto;grid-template-rows:auto auto;gap:10px 12px}
