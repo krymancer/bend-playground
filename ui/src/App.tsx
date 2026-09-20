@@ -51,11 +51,13 @@ export default function App() {
               <span className="size-2.5 rounded-sm bg-foreground" aria-hidden />
               <span className="hidden text-sm font-semibold tracking-tight sm:inline">Bend playground</span>
             </div>
-            <Tabs value={demo} onValueChange={select} className="min-w-0 flex-1 sm:ml-auto sm:flex-initial">
-              <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
-                {TABS.map(t => <TabsTrigger key={t.id} value={t.id} className="shrink-0">{t.label}</TabsTrigger>)}
-              </TabsList>
-            </Tabs>
+            <div className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:ml-auto sm:flex-initial">
+              <Tabs value={demo} onValueChange={select}>
+                <TabsList className="w-max">
+                  {TABS.map(t => <TabsTrigger key={t.id} value={t.id} className="shrink-0">{t.label}</TabsTrigger>)}
+                </TabsList>
+              </Tabs>
+            </div>
           </header>
           {demo === 'raytracer' && <Raytracer {...ray} reload={reloadRay} />}
           {demo === 'life' && <Life {...life} reload={reloadLife} active />}
