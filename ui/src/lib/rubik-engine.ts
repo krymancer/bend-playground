@@ -4,6 +4,8 @@ import { asset } from './runtime'
 const NS = 'http://www.w3.org/2000/svg'
 export const FACES = ['U', 'R', 'F', 'D', 'L', 'B'] as const
 export const FACE_COLORS = ['#e3c45c', '#b9554b', '#7e9a5e', '#fbfaf7', '#de9550', '#5f8fa8']
+// White reads as nothing on paper, so its labels, rails and accents use ink instead.
+export const FACE_INK = FACE_COLORS.map(c => c === '#fbfaf7' ? '#87847d' : c)
 export const moveName = (move: number) => FACES[Math.floor(move / 3)] + ['', '2', '′'][move % 3]
 
 type Vec = [number, number, number]
@@ -85,7 +87,7 @@ export function createRubik(Cube: Cube, cubeSvg: SVGSVGElement, graphSvg: SVGSVG
     circle.append(node('title', {}, `${FACES[Math.floor(i / 9)]}${i % 9 + 1}`)); dots.append(circle); return circle
   })
   for (let f = 0; f < 6; f++) {
-    const p = graphPoints[f * 9 + 4], label = node('text', { x: p[0], y: p[1] - 33, 'text-anchor': 'middle', fill: FACE_COLORS[f], class: 'cursor-pointer font-mono text-[14px] font-semibold', tabindex: 0, role: 'button', 'aria-label': `Turn ${FACES[f]} clockwise` }, FACES[f])
+    const p = graphPoints[f * 9 + 4], label = node('text', { x: p[0], y: p[1] - 33, 'text-anchor': 'middle', fill: FACE_INK[f], class: 'cursor-pointer font-mono text-[14px] font-semibold', tabindex: 0, role: 'button', 'aria-label': `Turn ${FACES[f]} clockwise` }, FACES[f])
     label.addEventListener('click', e => enqueue([f * 3 + ((e as MouseEvent).shiftKey ? 2 : 0)]))
     label.addEventListener('keydown', e => { const k = e as KeyboardEvent; if (k.key === 'Enter' || k.key === ' ') { k.preventDefault(); enqueue([f * 3 + (k.shiftKey ? 2 : 0)]) } })
     graphSvg.append(label)
@@ -115,7 +117,7 @@ export function createRubik(Cube: Cube, cubeSvg: SVGSVGElement, graphSvg: SVGSVG
     const move = animation?.move ?? selected * 3
     for (let i = 0; i < 54; i++) {
       const j = Cube.destination(i, move), moving = animation && i !== j
-      if (i !== j) highlight.append(node('path', { d: curvePath(curve(i, j)), fill: 'none', stroke: FACE_COLORS[face], 'stroke-width': animation ? 2 : 1.5, 'stroke-opacity': animation ? .8 : .45 }))
+      if (i !== j) highlight.append(node('path', { d: curvePath(curve(i, j)), fill: 'none', stroke: FACE_INK[face], 'stroke-width': animation ? 2 : 1.5, 'stroke-opacity': animation ? .8 : .45 }))
       const p = moving ? curveAt(curve(i, j), eased) : graphPoints[i], circle = dotNodes[i]
       circle.setAttribute('cx', String(p[0])); circle.setAttribute('cy', String(p[1])); circle.setAttribute('fill', FACE_COLORS[Math.floor(values[i] / 9)]); circle.setAttribute('r', moving ? '8' : '7')
     }

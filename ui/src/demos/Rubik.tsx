@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Empty, Field, Workspace } from '@/components/Workspace'
-import { createRubik, FACE_COLORS, FACES, loadCube, moveName, type RubikEngine, type RubikStatus } from '@/lib/rubik-engine'
+import { createRubik, FACE_INK, FACES, loadCube, moveName, type RubikEngine, type RubikStatus } from '@/lib/rubik-engine'
 
 export function Rubik({ active }: { active: boolean }) {
   const cubeSvg = useRef<SVGSVGElement>(null), graphSvg = useRef<SVGSVGElement>(null), history = useRef<HTMLDivElement>(null)
@@ -72,7 +72,7 @@ export function Rubik({ active }: { active: boolean }) {
             <div className="text-sm font-medium">Face turns</div>
             <div className="grid grid-cols-3 gap-1.5" aria-label="Face turns">
               {FACES.map((face, f) => [0, 1, 2].map(turn => (
-                <Button key={face + turn} size="sm" variant="outline" className="font-mono" style={{ borderLeftColor: FACE_COLORS[f], borderLeftWidth: 3 }}
+                <Button key={face + turn} size="sm" variant="outline" className="font-mono" style={{ borderLeftColor: FACE_INK[f], borderLeftWidth: 3 }}
                   aria-label={`Turn ${face} ${turn === 0 ? 'clockwise' : turn === 1 ? '180 degrees' : 'counterclockwise'}`}
                   disabled={!status} onMouseEnter={() => engine.current?.preview(f)} onFocus={() => engine.current?.preview(f)} onClick={() => engine.current?.enqueue([f * 3 + turn])}>
                   {moveName(f * 3 + turn)}

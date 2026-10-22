@@ -1,5 +1,28 @@
 # Bend playground
 
+Things I find beautiful, explained and computed in [Bend 2](https://bend-lang.com),
+styled after bend-lang.com. The home page (`#`) links every experiment.
+
+**Essays** (`ui/src/docs/`): long-form pages with live figures. Every
+simulation, training step and transform runs in a Bend module compiled to
+JavaScript in a browser worker; the page only draws what Bend returns.
+
+| Route | Bend module | What it computes |
+| --- | --- | --- |
+| `#neural-networks` | `demos/neural/net.bend` | neurons, MLP forward/backprop, gradient descent |
+| `#neuroevolution` | `demos/neuroevolution/flock.bend` | flappIA-style flock: physics, 5→8→2 brains, selection, mutation |
+| `#reinforcement-learning` | `demos/qlearning/agent.bend` | gridworld, Q-learning, value iteration |
+| `#cnn` | `demos/convolution/conv.bend` | convolution, ReLU, pooling, kernel learning |
+| `#deepfakes` | `demos/deepfake/meso.bend` | my thesis results + a toy CNN detector trained live |
+| `#meadow` | `demos/meadow/ecology.bend` | grazing, breeding and inheritance from sheep-simulation-3d |
+
+All browser engines are listed in `scripts/labs.mjs`. `npm run build:labs`
+compiles them; in `npm run dev:ui` they are served straight from `build/`.
+The JS target runs Bend's parallel calls sequentially; the same modules split
+work across cores or the GPU when compiled natively.
+
+## The original labs
+
 Twelve experiments: ray tracing, Conway's Game of Life, π from colliding blocks,
 Rubik's cube, Monte Carlo π, Buffon's needle, circle times tables, Fourier series,
 epicycles, Shakespeare's monkeys, sorting, and polar curves.
