@@ -194,12 +194,19 @@
 .doc th:first-child,.doc td:first-child{text-align:left}
 .doc th{color:var(--ink-2);font-weight:600}
 .doc tr.hi td{color:var(--vio);font-weight:600}
-.doc .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(20ch,1fr));gap:.8em;margin:1.2em 0}
+.doc .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8em;margin:1.2em 0}
 .doc .card{display:block;border:1px solid var(--line)!important;border-radius:4px;padding:.6em 1.2ch .7em;color:var(--ink-3)!important;background:transparent;transition:border-color .15s,background .15s}
 .doc .card:hover{border-color:var(--vio)!important;background:#ece8ef}
 .doc .card b{display:block;color:var(--ink-4)}
 .doc .card span{display:block;color:var(--ink-2);font-size:.8em;line-height:1.45;margin-top:.2em}
+.doc .filter{display:flex;flex-wrap:wrap;justify-content:center;gap:.2em 0;margin:2.4em 0 0;font-size:.87em}
+.doc .filter button{font:inherit;color:var(--ink-2);background:none;border:0;padding:0 1.2ch;cursor:pointer;text-transform:lowercase}
+.doc .filter button+button{border-left:1px solid var(--line)}
+.doc .filter button:hover{color:var(--vio)}
+.doc .filter button[aria-pressed=true]{color:var(--vio);font-weight:600}
 .doc .card .new{display:block;color:var(--grn);font-size:.75em;font-weight:600;margin:0 0 .1em}
 .doc .pager{display:flex;justify-content:space-between;gap:2ch;margin:3em 0 0;padding-top:1.4em;border-top:1px solid var(--line);font-size:.87em}
 .doc footer{margin:3em 0 0;text-align:center;color:var(--ink-1);font-size:.8em}
 @media (prefers-reduced-motion:reduce){.doc .bar i,.doc .bar b{transition:none}}
+
+@media (max-width:560px){.doc .cards{grid-template-columns:repeat(2,minmax(0,1fr))}}

@@ -320,7 +320,7 @@ export default function NeuralNetworks() {
         it less wrong. Repeat a few thousand times. That is all of it.</p>
       <p>This page builds one from scratch: a single neuron, then a layer of them,
         then the training loop. Every figure is computed by a small Bend module,
-        {' '}<code>net.bend</code>, running in a worker. The page only draws.</p>
+        {' '}<code>net.bend</code>, running in a worker.</p>
       {error && <p className="note">Bend worker error: {error}</p>}
 
       <Section n={1} title={<>A neuron <b>WEIGHS</b>.</>}>

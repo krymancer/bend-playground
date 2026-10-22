@@ -291,7 +291,7 @@ export default function Meadow() {
       <p>This is a 2D retelling of my 3D <a href="https://github.com/krymancer/sheep-simulation-3d">sheep meadow</a>.
         It uses the same rules and the same constants. The 3D version runs them in TypeScript.
         Here every rule is written in Bend (<code>demos/meadow/ecology.bend</code>), compiled to
-        JavaScript, and run in a worker. The page only draws what comes back.</p>
+        JavaScript, and run in a worker.</p>
 
       <Section n={1} title={<>Grass <b>GROWS</b>.</>}>
         <p>The meadow is a 48 × 48 grid. Each cell holds between 0 and 4 units of
