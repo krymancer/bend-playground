@@ -2,7 +2,7 @@ import {existsSync,mkdirSync,statSync,writeFileSync,renameSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {setup,root} from './setup.mjs';
-const modules={fourier:['demos/fourier/math.bend'],sorting:['demos/sorting/sort.bend','demos/shared/grid.bend','demos/probability/math.bend'],shakespeare:['demos/shakespeare/evolution.bend','demos/probability/math.bend'],polar:['demos/polar/curves.bend']};
+import {labs as modules} from './labs.mjs';
 export async function buildLabs(){
   setup();mkdirSync(resolve(root,'build'),{recursive:true});
   for(const [name,files] of Object.entries(modules)){

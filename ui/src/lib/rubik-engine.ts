@@ -3,7 +3,7 @@ import { asset } from './runtime'
 // surrounding controls; this module owns the two SVG scenes and the move queue.
 const NS = 'http://www.w3.org/2000/svg'
 export const FACES = ['U', 'R', 'F', 'D', 'L', 'B'] as const
-export const FACE_COLORS = ['#fde047', '#f87171', '#4ade80', '#fafafa', '#fb923c', '#60a5fa']
+export const FACE_COLORS = ['#e3c45c', '#b9554b', '#7e9a5e', '#fbfaf7', '#de9550', '#5f8fa8']
 export const moveName = (move: number) => FACES[Math.floor(move / 3)] + ['', '2', '′'][move % 3]
 
 type Vec = [number, number, number]
@@ -78,10 +78,10 @@ export function createRubik(Cube: Cube, cubeSvg: SVGSVGElement, graphSvg: SVGSVG
   for (let f = 0; f < 6; f++) for (let i = 0; i < 54; i++) {
     const j = Cube.destination(i, f * 3), key = [i, j].sort((a, b) => a - b).join(':')
     if (i === j || seen.has(key)) continue; seen.add(key)
-    edges.append(node('path', { d: curvePath(curve(i, j)), fill: 'none', stroke: '#71717a', 'stroke-opacity': .25, 'stroke-width': 1 }))
+    edges.append(node('path', { d: curvePath(curve(i, j)), fill: 'none', stroke: '#a9a59d', 'stroke-opacity': .25, 'stroke-width': 1 }))
   }
   const dotNodes = graphPoints.map((p, i) => {
-    const circle = node('circle', { cx: p[0], cy: p[1], r: 7, stroke: '#09090b', 'stroke-width': 2 })
+    const circle = node('circle', { cx: p[0], cy: p[1], r: 7, stroke: '#4d4a44', 'stroke-width': 2 })
     circle.append(node('title', {}, `${FACES[Math.floor(i / 9)]}${i % 9 + 1}`)); dots.append(circle); return circle
   })
   for (let f = 0; f < 6; f++) {
@@ -92,7 +92,7 @@ export function createRubik(Cube: Cube, cubeSvg: SVGSVGElement, graphSvg: SVGSVG
   }
   interface Geometry { p: Vec; normal: Vec; axes: [Vec, Vec]; radius: number; offset: number; color?: string; sticker: number; point: unknown }
   const geometry: Geometry[] = []
-  for (let x = 0; x < 3; x++) for (let y = 0; y < 3; y++) for (let z = 0; z < 3; z++) for (let f = 0; f < 6; f++) geometry.push({ p: [x - 1, y - 1, z - 1], normal: normals[f], axes: axes[f], radius: .49, offset: .49, color: '#18181b', sticker: -1, point: { $: 'Point', x, y, z } })
+  for (let x = 0; x < 3; x++) for (let y = 0; y < 3; y++) for (let z = 0; z < 3; z++) for (let f = 0; f < 6; f++) geometry.push({ p: [x - 1, y - 1, z - 1], normal: normals[f], axes: axes[f], radius: .49, offset: .49, color: '#e9e4db', sticker: -1, point: { $: 'Point', x, y, z } })
   for (let i = 0; i < 54; i++) geometry.push({ p: vec(sites[i].position), normal: vec(sites[i].normal), axes: axes[Math.floor(i / 9)], radius: .43, offset: .505, sticker: i, point: sites[i].position })
   const polygons = geometry.map(g => { const polygon = node('polygon', { 'stroke-linejoin': 'round', 'stroke-width': .8 }); cubeGroup.append(polygon); return { g, polygon } })
   const camera = (v: Vec) => rotate(rotate(v, [0, 1, 0], yaw), [1, 0, 0], pitch)
@@ -107,7 +107,7 @@ export function createRubik(Cube: Cube, cubeSvg: SVGSVGElement, graphSvg: SVGSVG
       const points = ([[-1, -1], [1, -1], [1, 1], [-1, 1]] as const).map(([u, v]) => camera(spin(add(add(center, scale(g.axes[0], u * g.radius)), scale(g.axes[1], v * g.radius)))))
       polygon.setAttribute('points', points.map(p => `${250 + p[0] * 79},${251 - p[1] * 79}`).join(' '))
       polygon.setAttribute('fill', g.sticker < 0 ? g.color! : FACE_COLORS[Math.floor(values[g.sticker] / 9)])
-      polygon.setAttribute('stroke', g.sticker < 0 ? '#09090b' : '#09090b88')
+      polygon.setAttribute('stroke', g.sticker < 0 ? '#4d4a44' : '#4d4a4455')
       projected.push({ polygon, z: camera(spin(center))[2] })
     }
     projected.sort((a, b) => a.z - b.z).forEach(({ polygon }) => cubeGroup.append(polygon))

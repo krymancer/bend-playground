@@ -62,8 +62,8 @@ export function Cubes({ data, loading, error, reload, active }: Props) {
           </div>
           <div className={cn('col-span-2 font-mono text-xs tracking-wide uppercase md:col-span-1 md:pb-1', state?.impact ? 'text-foreground' : 'text-muted-foreground')}>{state?.event ?? 'Heavy block moves left'}</div>
           <div className="col-start-2 row-start-1 flex flex-col gap-1 text-right font-mono text-xs text-muted-foreground md:col-start-3 md:flex-row md:gap-4 md:pb-1">
-            <span><i className="mr-1.5 inline-block size-2 rounded-xs bg-zinc-50 align-[-1px]" />small <b className="font-medium text-foreground tabular-nums">{fmt(state?.v ?? 0)}</b></span>
-            <span><i className="mr-1.5 inline-block size-2 rounded-xs bg-zinc-500 align-[-1px]" />heavy <b className="font-medium text-foreground tabular-nums">{fmt(state?.w ?? -1)}</b></span>
+            <span><i className="mr-1.5 inline-block size-2 rounded-xs bg-ink-4 align-[-1px]" />small <b className="font-medium text-foreground tabular-nums">{fmt(state?.v ?? 0)}</b></span>
+            <span><i className="mr-1.5 inline-block size-2 rounded-xs bg-ink-40 align-[-1px]" />heavy <b className="font-medium text-foreground tabular-nums">{fmt(state?.w ?? -1)}</b></span>
           </div>
         </div>
       )}

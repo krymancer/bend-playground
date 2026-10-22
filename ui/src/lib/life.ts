@@ -2,8 +2,8 @@ import type { LifeOutput } from './types'
 
 let pixels: ImageData | null = null
 let words: Uint32Array | null = null
-const DEAD: [number, number, number] = [24, 24, 27] // zinc-900
-const ALIVE: [number, number, number] = [244, 244, 245] // zinc-100
+const DEAD: [number, number, number] = [233, 228, 219] // paper-2
+const ALIVE: [number, number, number] = [139, 131, 181] // violet
 
 export function paintLife(canvas: HTMLCanvasElement, life: LifeOutput, frame: number) {
   const size = life.size, scale = size <= 128 ? 4 : 1

@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-export function useLab() {
-  const worker = useRef<Worker | null>(null), serial = useRef(0)
+// Request/response over a module worker. Each lab passes its own factory so Vite
+// can bundle the worker: `useWorker(() => new Worker(new URL('./x.worker.ts', import.meta.url), { type: 'module' }))`.
+export function useWorker(create: () => Worker) {
+  const worker = useRef<Worker | null>(null), serial = useRef(0), factory = useRef(create)
   const pending = useRef(new Map<number, { resolve: (data: any) => void; reject: (e: Error) => void }>())
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
-    const w = new Worker(new URL('./lab.worker.ts', import.meta.url), { type: 'module' }); worker.current = w
+    const w = factory.current(); worker.current = w
     w.onmessage = ({ data }) => {
       const p = pending.current.get(data.id); pending.current.delete(data.id)
       if (data.error) { setError(data.error); p?.reject(new Error(data.error)) } else p?.resolve(data.result)
@@ -18,3 +20,4 @@ export function useLab() {
   }), [])
   return { call, error, setError }
 }
+export const useLab = () => useWorker(() => new Worker(new URL('./lab.worker.ts', import.meta.url), { type: 'module' }))

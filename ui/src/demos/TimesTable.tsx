@@ -10,9 +10,9 @@ function paint(canvas: HTMLCanvasElement, coordinates: Float32Array) {
   if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height }
   const c = canvas.getContext('2d')!, x = rect.width / 2, y = rect.height / 2, r = Math.max(1, Math.min(x, y) - 26)
   c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, rect.width, rect.height)
-  c.strokeStyle = '#52525b'; c.lineWidth = 1; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.stroke()
+  c.strokeStyle = '#cdc7bc'; c.lineWidth = 1; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.stroke()
   const gradient = c.createLinearGradient(x - r, y - r, x + r, y + r)
-  gradient.addColorStop(0, '#5eead4'); gradient.addColorStop(.5, '#38bdf8'); gradient.addColorStop(1, '#c084fc')
+  gradient.addColorStop(0, '#8b83b5'); gradient.addColorStop(.5, '#5f8fa8'); gradient.addColorStop(1, '#c4845c')
   c.strokeStyle = gradient; c.lineWidth = .65; c.globalAlpha = .38; c.beginPath()
   for (let i = 0; i < coordinates.length; i += 4) { c.moveTo(x + coordinates[i] * r, y + coordinates[i + 1] * r); c.lineTo(x + coordinates[i + 2] * r, y + coordinates[i + 3] * r) }
   c.stroke(); c.globalAlpha = 1

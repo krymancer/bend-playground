@@ -64,8 +64,8 @@ export function Fourier({ mode }: { mode: 'wave' | 'drawing' }) {
   const canvas = usePaint(cvs => {
     const { c, width, height } = surface(cvs), wave = mode === 'wave', scale = Math.min(wave ? width * .23 / Math.max(1, chain.reduce((sum, s) => sum + s.radius, 0)) : width * .4, height * .36), ox = wave ? width * .25 : width / 2, oy = height / 2
     if (drawing) {
-      c.fillStyle = '#a1a1aa'; c.font = '14px sans-serif'; c.textAlign = 'center'; c.fillText('Draw a continuous outline. Release to build its epicycles.', width / 2, 30)
-      c.strokeStyle = '#5eead4'; c.lineWidth = 2; c.beginPath(); ink.forEach(([x, y], i) => { if (!i) c.moveTo(x * width, y * height); else c.lineTo(x * width, y * height) }); c.stroke(); return
+      c.fillStyle = '#87847d'; c.font = '14px sans-serif'; c.textAlign = 'center'; c.fillText('Draw a continuous outline. Release to build its epicycles.', width / 2, 30)
+      c.strokeStyle = '#8b83b5'; c.lineWidth = 2; c.beginPath(); ink.forEach(([x, y], i) => { if (!i) c.moveTo(x * width, y * height); else c.lineTo(x * width, y * height) }); c.stroke(); return
     }
     if (!path) return
     const trace = (full: boolean) => {
@@ -73,14 +73,14 @@ export function Fourier({ mode }: { mode: 'wave' | 'drawing' }) {
       for (let i = 0; i <= count; i++) { const x = wave ? width * .57 + i / 512 * width * .39 : ox + path[i * 2] * scale, y = oy + path[i * 2 + 1] * scale; if (!i) c.moveTo(x, y); else c.lineTo(x, y) }
       c.stroke()
     }
-    c.strokeStyle = '#3f3f46'; c.lineWidth = 1; trace(true)
-    c.strokeStyle = '#5eead4'; c.lineWidth = 2; trace(false)
+    c.strokeStyle = '#d6d0c5'; c.lineWidth = 1; trace(true)
+    c.strokeStyle = '#8b83b5'; c.lineWidth = 2; trace(false)
     for (const [i, s] of chain.entries()) {
       c.strokeStyle = `hsla(${175 + i * 7},70%,65%,.45)`; c.lineWidth = 1; c.beginPath(); c.arc(ox + s.cx * scale, oy + s.cy * scale, Math.abs(s.radius * scale), 0, Math.PI * 2); c.stroke()
-      c.strokeStyle = '#d4d4d8'; c.beginPath(); c.moveTo(ox + s.cx * scale, oy + s.cy * scale); c.lineTo(ox + s.x * scale, oy + s.y * scale); c.stroke()
+      c.strokeStyle = '#69665f'; c.beginPath(); c.moveTo(ox + s.cx * scale, oy + s.cy * scale); c.lineTo(ox + s.x * scale, oy + s.y * scale); c.stroke()
     }
     const end = chain.at(-1)
-    if (end) { const x = ox + end.x * scale, y = oy + end.y * scale; c.fillStyle = '#fafafa'; c.beginPath(); c.arc(x, y, 3, 0, Math.PI * 2); c.fill(); if (wave) { c.setLineDash([4, 4]); c.strokeStyle = '#71717a'; c.beginPath(); c.moveTo(x, y); c.lineTo(width * .57 + phase * width * .39, y); c.stroke(); c.setLineDash([]) } }
+    if (end) { const x = ox + end.x * scale, y = oy + end.y * scale; c.fillStyle = '#4d4a44'; c.beginPath(); c.arc(x, y, 3, 0, Math.PI * 2); c.fill(); if (wave) { c.setLineDash([4, 4]); c.strokeStyle = '#a9a59d'; c.beginPath(); c.moveTo(x, y); c.lineTo(width * .57 + phase * width * .39, y); c.stroke(); c.setLineDash([]) } }
   })
   const pos = (e: React.PointerEvent<HTMLCanvasElement>): Point => { const r = e.currentTarget.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height] }
   return <Workspace title={mode === 'wave' ? 'Fourier series' : 'Drawing with epicycles'} tag="Live Bend · Fourier" description={mode === 'wave' ? 'Add rotating odd harmonics to reconstruct a square wave, as in your original Fourier sketch.' : 'A complex discrete Fourier transform turns your original drawing—or a new sketch—into rotating circles.'}

@@ -6,6 +6,7 @@ import { config } from './demo-lib.mjs';
 import {buildRubik} from './build-rubik.mjs';
 import {buildTimesTable} from './build-times-table.mjs';
 import {buildLabs} from './build-labs.mjs';
+import {engines} from './labs.mjs';
 await buildRubik();
 await buildTimesTable();
 await buildLabs();
@@ -18,10 +19,8 @@ const compress=promisify(gzip),compressed=new Map();
 const outputs={'/output/raytracer.ppm':['output/raytracer.ppm','image/x-portable-pixmap'],'/output/raytracer.json':['output/raytracer.json','application/json'],
   '/output/life.json':['output/life.json','application/json'],'/output/cubes.json':['output/cubes.json','application/json'],'/output/benchmarks.json':['output/benchmarks.json','application/json'],
   '/output/montecarlo.json':['output/montecarlo.json','application/json'],
-  '/output/buffon.json':['output/buffon.json','application/json'],
-  '/times-table-engine.js':['build/times-table-engine.js','text/javascript'],
-  '/rubik-engine.js':['build/rubik-engine.js','text/javascript']};
-for(const name of ['fourier','sorting','shakespeare','polar'])outputs[`/${name}-engine.js`]=[`build/${name}-engine.js`,'text/javascript'];
+  '/output/buffon.json':['output/buffon.json','application/json']};
+for(const name of engines)outputs[`/${name}-engine.js`]=[`build/${name}-engine.js`,'text/javascript'];
 const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2','.json':'application/json'};
 // The React UI (ui/) is built by Vite into build/ui; run `npm run build:ui` or `npm run playground`.
 const ui=resolve(root,'build/ui');

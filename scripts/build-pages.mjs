@@ -6,6 +6,7 @@ import { setup, root } from './setup.mjs';
 import { buildRubik } from './build-rubik.mjs';
 import { buildTimesTable } from './build-times-table.mjs';
 import { buildLabs } from './build-labs.mjs';
+import { engines } from './labs.mjs';
 
 setup();
 await buildRubik(); await buildTimesTable(); await buildLabs();
@@ -26,7 +27,7 @@ for (const [name, source] of Object.entries(modules)) {
   const result = await load(pathToFileURL(resolve(root, source)).href, {}, () => { throw new Error('Expected a Bend module.'); });
   writeFileSync(resolve(output, `${name}-engine.js`), `// Compiled from ${source} by Bend 2.0.5.\n${result.source}`);
 }
-for (const name of ['rubik', 'times-table', 'fourier', 'sorting', 'shakespeare', 'polar'])
+for (const name of engines)
   copyFileSync(resolve(root, `build/${name}-engine.js`), resolve(output, `${name}-engine.js`));
 writeFileSync(resolve(output, '.nojekyll'), '');
 console.log(`Standalone site ready in build/pages (base ${base}).`);
